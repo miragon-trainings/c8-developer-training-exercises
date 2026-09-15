@@ -30,7 +30,7 @@
         <mockk.version>1.14.11</mockk.version>
         <spring-mockk.version>5.0.1</spring-mockk.version>
         <kotlin-mockito.version>6.3.0</kotlin-mockito.version>
-        <bpmn-to-code.version>5.2.0</bpmn-to-code.version>
+        <bpmn-to-code.version>5.1.0</bpmn-to-code.version>
     </properties>
 
     <dependencyManagement>

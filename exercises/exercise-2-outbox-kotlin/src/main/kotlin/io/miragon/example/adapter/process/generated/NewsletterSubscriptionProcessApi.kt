@@ -169,7 +169,7 @@ object NewsletterSubscriptionProcessApi {
   }
 
   /**
-   * Per-element graph metadata (previousElements / followingElements / parentId / boundary attachments).
+   * Per-element graph metadata (elementType / previousElements / followingElements / parentId / boundary attachments).
    * Intended for tooling and tests, not worker runtime code.
    */
   object Relations {
@@ -180,6 +180,7 @@ object NewsletterSubscriptionProcessApi {
           parentId = null,
           attachedToRef = null,
           attachedElements = emptyList(),
+          elementType = "SERVICE_TASK",
         )
 
     val ACTIVITY_CONFIRM_REGISTRATION: BpmnRelations = BpmnRelations(
@@ -189,6 +190,7 @@ object NewsletterSubscriptionProcessApi {
           parentId = "SubProcess_Confirmation",
           attachedToRef = null,
           attachedElements = listOf("Timer_EveryDay"),
+          elementType = "RECEIVE_TASK",
         )
 
     val ACTIVITY_SEND_CONFIRMATION_MAIL: BpmnRelations = BpmnRelations(
@@ -198,6 +200,7 @@ object NewsletterSubscriptionProcessApi {
           parentId = "SubProcess_Confirmation",
           attachedToRef = null,
           attachedElements = emptyList(),
+          elementType = "SERVICE_TASK",
         )
 
     val ACTIVITY_SEND_WELCOME_MAIL: BpmnRelations = BpmnRelations(
@@ -207,6 +210,7 @@ object NewsletterSubscriptionProcessApi {
           parentId = null,
           attachedToRef = null,
           attachedElements = emptyList(),
+          elementType = "SERVICE_TASK",
         )
 
     val END_EVENT_REGISTRATION_ABORTED: BpmnRelations = BpmnRelations(
@@ -216,6 +220,7 @@ object NewsletterSubscriptionProcessApi {
           parentId = null,
           attachedToRef = null,
           attachedElements = emptyList(),
+          elementType = "END_EVENT",
         )
 
     val END_EVENT_REGISTRATION_COMPLETED: BpmnRelations = BpmnRelations(
@@ -225,6 +230,7 @@ object NewsletterSubscriptionProcessApi {
           parentId = null,
           attachedToRef = null,
           attachedElements = emptyList(),
+          elementType = "MESSAGE_END_EVENT",
         )
 
     val END_EVENT_SUBSCRIPTION_CONFIRMED: BpmnRelations = BpmnRelations(
@@ -234,6 +240,7 @@ object NewsletterSubscriptionProcessApi {
           parentId = "SubProcess_Confirmation",
           attachedToRef = null,
           attachedElements = emptyList(),
+          elementType = "END_EVENT",
         )
 
     val START_EVENT_REQUEST_RECEIVED: BpmnRelations = BpmnRelations(
@@ -243,6 +250,7 @@ object NewsletterSubscriptionProcessApi {
           parentId = "SubProcess_Confirmation",
           attachedToRef = null,
           attachedElements = emptyList(),
+          elementType = "START_EVENT",
         )
 
     val START_EVENT_SUBMIT_REGISTRATION_FORM: BpmnRelations = BpmnRelations(
@@ -252,6 +260,7 @@ object NewsletterSubscriptionProcessApi {
           parentId = null,
           attachedToRef = null,
           attachedElements = emptyList(),
+          elementType = "MESSAGE_START_EVENT",
         )
 
     val SUB_PROCESS_CONFIRMATION: BpmnRelations = BpmnRelations(
@@ -261,6 +270,7 @@ object NewsletterSubscriptionProcessApi {
           parentId = null,
           attachedToRef = null,
           attachedElements = listOf("Timer_After3Days"),
+          elementType = "SUB_PROCESS",
         )
 
     val TIMER_AFTER_3_DAYS: BpmnRelations = BpmnRelations(
@@ -270,6 +280,7 @@ object NewsletterSubscriptionProcessApi {
           parentId = null,
           attachedToRef = "SubProcess_Confirmation",
           attachedElements = emptyList(),
+          elementType = "TIMER_BOUNDARY_EVENT",
         )
 
     val TIMER_EVERY_DAY: BpmnRelations = BpmnRelations(
@@ -279,6 +290,7 @@ object NewsletterSubscriptionProcessApi {
           parentId = "SubProcess_Confirmation",
           attachedToRef = "Activity_ConfirmRegistration",
           attachedElements = emptyList(),
+          elementType = "TIMER_BOUNDARY_EVENT",
         )
   }
 }
