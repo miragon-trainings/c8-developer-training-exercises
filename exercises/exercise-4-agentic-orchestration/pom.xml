@@ -21,8 +21,8 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <spring-boot.version>4.0.6</spring-boot.version>
-        <zeebe.version>8.9.6</zeebe.version>
+        <spring-boot.version>4.1.1</spring-boot.version>
+        <zeebe.version>8.9.17</zeebe.version>
         <postgresql.version>42.7.8</postgresql.version>
         <mockito.version>5.2.0</mockito.version>
     </properties>

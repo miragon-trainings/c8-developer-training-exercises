@@ -233,7 +233,7 @@ object BikeSubscriptionSignupProcessApi {
   }
 
   /**
-   * Per-element graph metadata (previousElements / followingElements / parentId / boundary attachments).
+   * Per-element graph metadata (elementType / previousElements / followingElements / parentId / boundary attachments).
    * Intended for tooling and tests, not worker runtime code.
    */
   object Relations {
@@ -244,6 +244,7 @@ object BikeSubscriptionSignupProcessApi {
           parentId = null,
           attachedToRef = null,
           attachedElements = emptyList(),
+          elementType = "SERVICE_TASK",
         )
 
     val ACTIVITY_NOTIFY_ABOUT_CANCELATION: BpmnRelations = BpmnRelations(
@@ -253,6 +254,7 @@ object BikeSubscriptionSignupProcessApi {
           parentId = null,
           attachedToRef = null,
           attachedElements = emptyList(),
+          elementType = "SERVICE_TASK",
         )
 
     val ACTIVITY_SEND_CONFIRMATION_MAIL: BpmnRelations = BpmnRelations(
@@ -262,6 +264,7 @@ object BikeSubscriptionSignupProcessApi {
           parentId = null,
           attachedToRef = null,
           attachedElements = emptyList(),
+          elementType = "SERVICE_TASK",
         )
 
     val ACTIVITY_SEND_PAYMENT_REMINDER: BpmnRelations = BpmnRelations(
@@ -271,6 +274,7 @@ object BikeSubscriptionSignupProcessApi {
           parentId = null,
           attachedToRef = null,
           attachedElements = emptyList(),
+          elementType = "SERVICE_TASK",
         )
 
     val ACTIVITY_SEND_REJECTION_MAIL: BpmnRelations = BpmnRelations(
@@ -280,6 +284,7 @@ object BikeSubscriptionSignupProcessApi {
           parentId = null,
           attachedToRef = null,
           attachedElements = emptyList(),
+          elementType = "SERVICE_TASK",
         )
 
     val ACTIVITY_SEND_WELCOME_MAIL: BpmnRelations = BpmnRelations(
@@ -289,6 +294,7 @@ object BikeSubscriptionSignupProcessApi {
           parentId = null,
           attachedToRef = null,
           attachedElements = emptyList(),
+          elementType = "SERVICE_TASK",
         )
 
     val ACTIVITY_SHIP_BIKE: BpmnRelations = BpmnRelations(
@@ -298,6 +304,7 @@ object BikeSubscriptionSignupProcessApi {
           parentId = null,
           attachedToRef = null,
           attachedElements = emptyList(),
+          elementType = "SERVICE_TASK",
         )
 
     val ACTIVITY_WAIT_FOR_DELIVERY: BpmnRelations = BpmnRelations(
@@ -307,6 +314,7 @@ object BikeSubscriptionSignupProcessApi {
           parentId = null,
           attachedToRef = null,
           attachedElements = emptyList(),
+          elementType = "RECEIVE_TASK",
         )
 
     val ACTIVITY_WAIT_FOR_PAYMENT: BpmnRelations = BpmnRelations(
@@ -316,6 +324,7 @@ object BikeSubscriptionSignupProcessApi {
           parentId = null,
           attachedToRef = null,
           attachedElements = listOf("Timer_Every3Days", "Message_RequestCanceledEvent"),
+          elementType = "RECEIVE_TASK",
         )
 
     val END_EVENT_CUSTOMER_REMINDED: BpmnRelations = BpmnRelations(
@@ -325,6 +334,7 @@ object BikeSubscriptionSignupProcessApi {
           parentId = null,
           attachedToRef = null,
           attachedElements = emptyList(),
+          elementType = "END_EVENT",
         )
 
     val END_EVENT_OFFER_NOT_POSSIBLE: BpmnRelations = BpmnRelations(
@@ -334,6 +344,7 @@ object BikeSubscriptionSignupProcessApi {
           parentId = null,
           attachedToRef = null,
           attachedElements = emptyList(),
+          elementType = "END_EVENT",
         )
 
     val END_EVENT_REQUEST_CANCELED: BpmnRelations = BpmnRelations(
@@ -343,6 +354,7 @@ object BikeSubscriptionSignupProcessApi {
           parentId = null,
           attachedToRef = null,
           attachedElements = emptyList(),
+          elementType = "END_EVENT",
         )
 
     val END_EVENT_SUBSCRIPTION_ACTIVE: BpmnRelations = BpmnRelations(
@@ -352,6 +364,7 @@ object BikeSubscriptionSignupProcessApi {
           parentId = null,
           attachedToRef = null,
           attachedElements = emptyList(),
+          elementType = "END_EVENT",
         )
 
     val GATEWAY_BIKE_AVAILABLE: BpmnRelations = BpmnRelations(
@@ -361,6 +374,7 @@ object BikeSubscriptionSignupProcessApi {
           parentId = null,
           attachedToRef = null,
           attachedElements = emptyList(),
+          elementType = "EXCLUSIVE_GATEWAY",
         )
 
     val MESSAGE_REQUEST_CANCELED_EVENT: BpmnRelations = BpmnRelations(
@@ -370,6 +384,7 @@ object BikeSubscriptionSignupProcessApi {
           parentId = null,
           attachedToRef = "Activity_WaitForPayment",
           attachedElements = emptyList(),
+          elementType = "MESSAGE_BOUNDARY_EVENT",
         )
 
     val START_EVENT_SUBSCRIPTION_REQUESTED: BpmnRelations = BpmnRelations(
@@ -379,6 +394,7 @@ object BikeSubscriptionSignupProcessApi {
           parentId = null,
           attachedToRef = null,
           attachedElements = emptyList(),
+          elementType = "START_EVENT",
         )
 
     val TIMER_EVERY_3_DAYS: BpmnRelations = BpmnRelations(
@@ -388,6 +404,7 @@ object BikeSubscriptionSignupProcessApi {
           parentId = null,
           attachedToRef = "Activity_WaitForPayment",
           attachedElements = emptyList(),
+          elementType = "TIMER_BOUNDARY_EVENT",
         )
   }
 }

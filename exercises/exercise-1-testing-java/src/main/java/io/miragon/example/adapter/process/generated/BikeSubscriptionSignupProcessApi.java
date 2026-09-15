@@ -168,42 +168,42 @@ public final class BikeSubscriptionSignupProcessApi {
   }
 
   /**
-   * Per-element graph metadata (previousElements / followingElements / parentId / boundary attachments).
+   * Per-element graph metadata (elementType / previousElements / followingElements / parentId / boundary attachments).
    * Intended for tooling and tests, not worker runtime code.
    */
   public static final class Relations {
-    public static final BpmnRelations ACTIVITY_CHECK_AVAILABILITY = new BpmnRelations("Check bike availability", List.of("StartEvent_SubscriptionRequested"), List.of("Gateway_BikeAvailable"), null, null, List.of());
+    public static final BpmnRelations ACTIVITY_CHECK_AVAILABILITY = new BpmnRelations("Check bike availability", List.of("StartEvent_SubscriptionRequested"), List.of("Gateway_BikeAvailable"), null, null, List.of(), "SERVICE_TASK");
 
-    public static final BpmnRelations ACTIVITY_NOTIFY_ABOUT_CANCELATION = new BpmnRelations("Notify about cancelation", List.of("Message_RequestCanceledEvent"), List.of("EndEvent_RequestCanceled"), null, null, List.of());
+    public static final BpmnRelations ACTIVITY_NOTIFY_ABOUT_CANCELATION = new BpmnRelations("Notify about cancelation", List.of("Message_RequestCanceledEvent"), List.of("EndEvent_RequestCanceled"), null, null, List.of(), "SERVICE_TASK");
 
-    public static final BpmnRelations ACTIVITY_SEND_CONFIRMATION_MAIL = new BpmnRelations("Send confirmation mail", List.of("Gateway_BikeAvailable"), List.of("Activity_WaitForPayment"), null, null, List.of());
+    public static final BpmnRelations ACTIVITY_SEND_CONFIRMATION_MAIL = new BpmnRelations("Send confirmation mail", List.of("Gateway_BikeAvailable"), List.of("Activity_WaitForPayment"), null, null, List.of(), "SERVICE_TASK");
 
-    public static final BpmnRelations ACTIVITY_SEND_PAYMENT_REMINDER = new BpmnRelations("Remind about payment", List.of("Timer_Every3Days"), List.of("EndEvent_CustomerReminded"), null, null, List.of());
+    public static final BpmnRelations ACTIVITY_SEND_PAYMENT_REMINDER = new BpmnRelations("Remind about payment", List.of("Timer_Every3Days"), List.of("EndEvent_CustomerReminded"), null, null, List.of(), "SERVICE_TASK");
 
-    public static final BpmnRelations ACTIVITY_SEND_REJECTION_MAIL = new BpmnRelations("Send rejection mail", List.of("Gateway_BikeAvailable"), List.of("EndEvent_OfferNotPossible"), null, null, List.of());
+    public static final BpmnRelations ACTIVITY_SEND_REJECTION_MAIL = new BpmnRelations("Send rejection mail", List.of("Gateway_BikeAvailable"), List.of("EndEvent_OfferNotPossible"), null, null, List.of(), "SERVICE_TASK");
 
-    public static final BpmnRelations ACTIVITY_SEND_WELCOME_MAIL = new BpmnRelations("Send welcome Mail", List.of("Activity_WaitForDelivery"), List.of("EndEvent_SubscriptionActive"), null, null, List.of());
+    public static final BpmnRelations ACTIVITY_SEND_WELCOME_MAIL = new BpmnRelations("Send welcome Mail", List.of("Activity_WaitForDelivery"), List.of("EndEvent_SubscriptionActive"), null, null, List.of(), "SERVICE_TASK");
 
-    public static final BpmnRelations ACTIVITY_SHIP_BIKE = new BpmnRelations("Ship bike", List.of("Activity_WaitForPayment"), List.of("Activity_WaitForDelivery"), null, null, List.of());
+    public static final BpmnRelations ACTIVITY_SHIP_BIKE = new BpmnRelations("Ship bike", List.of("Activity_WaitForPayment"), List.of("Activity_WaitForDelivery"), null, null, List.of(), "SERVICE_TASK");
 
-    public static final BpmnRelations ACTIVITY_WAIT_FOR_DELIVERY = new BpmnRelations("Bike received", List.of("Activity_ShipBike"), List.of("Activity_SendWelcomeMail"), null, null, List.of());
+    public static final BpmnRelations ACTIVITY_WAIT_FOR_DELIVERY = new BpmnRelations("Bike received", List.of("Activity_ShipBike"), List.of("Activity_SendWelcomeMail"), null, null, List.of(), "RECEIVE_TASK");
 
-    public static final BpmnRelations ACTIVITY_WAIT_FOR_PAYMENT = new BpmnRelations("Wait for first payment", List.of("Activity_SendConfirmationMail"), List.of("Activity_ShipBike"), null, null, List.of("Timer_Every3Days", "Message_RequestCanceledEvent"));
+    public static final BpmnRelations ACTIVITY_WAIT_FOR_PAYMENT = new BpmnRelations("Wait for first payment", List.of("Activity_SendConfirmationMail"), List.of("Activity_ShipBike"), null, null, List.of("Timer_Every3Days", "Message_RequestCanceledEvent"), "RECEIVE_TASK");
 
-    public static final BpmnRelations END_EVENT_CUSTOMER_REMINDED = new BpmnRelations("Customer reminded", List.of("Activity_SendPaymentReminder"), List.of(), null, null, List.of());
+    public static final BpmnRelations END_EVENT_CUSTOMER_REMINDED = new BpmnRelations("Customer reminded", List.of("Activity_SendPaymentReminder"), List.of(), null, null, List.of(), "END_EVENT");
 
-    public static final BpmnRelations END_EVENT_OFFER_NOT_POSSIBLE = new BpmnRelations("Offer not possible", List.of("Activity_SendRejectionMail"), List.of(), null, null, List.of());
+    public static final BpmnRelations END_EVENT_OFFER_NOT_POSSIBLE = new BpmnRelations("Offer not possible", List.of("Activity_SendRejectionMail"), List.of(), null, null, List.of(), "END_EVENT");
 
-    public static final BpmnRelations END_EVENT_REQUEST_CANCELED = new BpmnRelations("Subscription request canceled", List.of("Activity_NotifyAboutCancelation"), List.of(), null, null, List.of());
+    public static final BpmnRelations END_EVENT_REQUEST_CANCELED = new BpmnRelations("Subscription request canceled", List.of("Activity_NotifyAboutCancelation"), List.of(), null, null, List.of(), "END_EVENT");
 
-    public static final BpmnRelations END_EVENT_SUBSCRIPTION_ACTIVE = new BpmnRelations("Subscription active", List.of("Activity_SendWelcomeMail"), List.of(), null, null, List.of());
+    public static final BpmnRelations END_EVENT_SUBSCRIPTION_ACTIVE = new BpmnRelations("Subscription active", List.of("Activity_SendWelcomeMail"), List.of(), null, null, List.of(), "END_EVENT");
 
-    public static final BpmnRelations GATEWAY_BIKE_AVAILABLE = new BpmnRelations("Available?", List.of("Activity_CheckAvailability"), List.of("Activity_SendConfirmationMail", "Activity_SendRejectionMail"), null, null, List.of());
+    public static final BpmnRelations GATEWAY_BIKE_AVAILABLE = new BpmnRelations("Available?", List.of("Activity_CheckAvailability"), List.of("Activity_SendConfirmationMail", "Activity_SendRejectionMail"), null, null, List.of(), "EXCLUSIVE_GATEWAY");
 
-    public static final BpmnRelations MESSAGE_REQUEST_CANCELED_EVENT = new BpmnRelations("Request canceled", List.of(), List.of("Activity_NotifyAboutCancelation"), null, "Activity_WaitForPayment", List.of());
+    public static final BpmnRelations MESSAGE_REQUEST_CANCELED_EVENT = new BpmnRelations("Request canceled", List.of(), List.of("Activity_NotifyAboutCancelation"), null, "Activity_WaitForPayment", List.of(), "MESSAGE_BOUNDARY_EVENT");
 
-    public static final BpmnRelations START_EVENT_SUBSCRIPTION_REQUESTED = new BpmnRelations("Subscription requested", List.of(), List.of("Activity_CheckAvailability"), null, null, List.of());
+    public static final BpmnRelations START_EVENT_SUBSCRIPTION_REQUESTED = new BpmnRelations("Subscription requested", List.of(), List.of("Activity_CheckAvailability"), null, null, List.of(), "START_EVENT");
 
-    public static final BpmnRelations TIMER_EVERY_3_DAYS = new BpmnRelations("Every 3 days", List.of(), List.of("Activity_SendPaymentReminder"), null, "Activity_WaitForPayment", List.of());
+    public static final BpmnRelations TIMER_EVERY_3_DAYS = new BpmnRelations("Every 3 days", List.of(), List.of("Activity_SendPaymentReminder"), null, "Activity_WaitForPayment", List.of(), "TIMER_BOUNDARY_EVENT");
   }
 }
