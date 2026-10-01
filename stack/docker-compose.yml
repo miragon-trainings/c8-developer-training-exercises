@@ -14,7 +14,7 @@ services:
 
   # Consolidated Zeebe + Operate + Tasklist - https://docs.camunda.io/docs/self-managed/setup/deploy/other/docker/#zeebe
   orchestration:
-    image: camunda/camunda:8.9.18
+    image: camunda/camunda:8.9.21
     container_name: c8-dev-training-zeebe
     ports:
       - "26500:26500"
@@ -38,7 +38,7 @@ services:
         condition: service_healthy
 
   elasticsearch: # https://hub.docker.com/_/elasticsearch
-    image: docker.elastic.co/elasticsearch/elasticsearch:9.5.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.5.4
     container_name: elasticsearch
     ports:
       - "9200:9200"
@@ -65,7 +65,7 @@ services:
   # Camunda Connectors - executes outbound and inbound connector logic
   # Docs: https://docs.camunda.io/docs/self-managed/connectors-deployment/connectors-configuration/
   connectors:
-    image: camunda/connectors-bundle:8.9.0
+    image: camunda/connectors-bundle:8.9.12
     container_name: connectors
     ports:
       - "8086:8080"
