@@ -3,16 +3,32 @@
 
 package io.miragon.example.adapter.process.generated
 
+import io.miragon.bpmn.runtime.AbstractFlowNode
+import io.miragon.bpmn.runtime.AttachedBoundaryEvent
+import io.miragon.bpmn.runtime.BoundaryEvent
+import io.miragon.bpmn.runtime.BpmnElementType
 import io.miragon.bpmn.runtime.BpmnEngine
-import io.miragon.bpmn.runtime.BpmnFlow
-import io.miragon.bpmn.runtime.BpmnRelations
+import io.miragon.bpmn.runtime.BpmnEventType
 import io.miragon.bpmn.runtime.BpmnTimer
 import io.miragon.bpmn.runtime.ElementId
+import io.miragon.bpmn.runtime.Event
+import io.miragon.bpmn.runtime.FlowNode
+import io.miragon.bpmn.runtime.FlowScope
+import io.miragon.bpmn.runtime.HasJobType
+import io.miragon.bpmn.runtime.HasMessage
+import io.miragon.bpmn.runtime.HasSuccessors
+import io.miragon.bpmn.runtime.HasVariables
 import io.miragon.bpmn.runtime.MessageName
 import io.miragon.bpmn.runtime.ProcessId
+import io.miragon.bpmn.runtime.RegisteredVariableDefinitions
+import io.miragon.bpmn.runtime.SequenceFlows
+import io.miragon.bpmn.runtime.TimerEvent
+import io.miragon.bpmn.runtime.TimerType
 import io.miragon.bpmn.runtime.VariableName
+import kotlin.Boolean
 import kotlin.String
 import kotlin.Suppress
+import kotlin.collections.List
 
 object NewsletterSubscriptionProcessApi {
   val PROCESS_ID: ProcessId = ProcessId("newsletter-subscription")
@@ -20,277 +36,291 @@ object NewsletterSubscriptionProcessApi {
   val PROCESS_ENGINE: BpmnEngine = BpmnEngine.ZEEBE
 
   /**
-   * BPMN element ids as declared in the source model.
-   * Typically used in process-level tests or when searching for tasks.
-   * Worker runtime code rarely needs these.
+   * Typed navigation over the process flow: one nested object per BPMN element.
    */
-  object Elements {
-    val ACTIVITY_ABORT_REGISTRATION: ElementId = ElementId("Activity_AbortRegistration")
+  object FlowNodes {
+    val all: List<FlowNode> = listOf(
+      ActivityAbortRegistration,
+      ActivityConfirmRegistration,
+      ActivitySendConfirmationMail,
+      ActivitySendWelcomeMail,
+      EndEventRegistrationAborted,
+      EndEventRegistrationCompleted,
+      EndEventSubscriptionConfirmed,
+      StartEventRequestReceived,
+      StartEventSubmitRegistrationForm,
+      SubProcessConfirmation,
+      TimerAfter3Days,
+      TimerEveryDay,
+    )
 
-    val ACTIVITY_CONFIRM_REGISTRATION: ElementId = ElementId("Activity_ConfirmRegistration")
+    object ActivityAbortRegistration : AbstractFlowNode(
+      id = ElementId(ActivityAbortRegistration.ELEMENT_ID),
+      elementType = BpmnElementType.SERVICE_TASK,
+      name = "Abort registration",
+    ), HasSuccessors<ActivityAbortRegistration.Next>, HasJobType {
+      const val ELEMENT_ID: String = "Activity_AbortRegistration"
 
-    val ACTIVITY_SEND_CONFIRMATION_MAIL: ElementId =
-        ElementId("Activity_SendConfirmationMail")
+      override val jobType: String = ServiceTasks.NEWSLETTER_ABORT_REGISTRATION
 
-    val ACTIVITY_SEND_WELCOME_MAIL: ElementId = ElementId("Activity_SendWelcomeMail")
+      override val next: Next = Next
 
-    val END_EVENT_REGISTRATION_ABORTED: ElementId = ElementId("EndEvent_RegistrationAborted")
-
-    val END_EVENT_REGISTRATION_COMPLETED: ElementId =
-        ElementId("EndEvent_RegistrationCompleted")
-
-    val END_EVENT_SUBSCRIPTION_CONFIRMED: ElementId =
-        ElementId("EndEvent_SubscriptionConfirmed")
-
-    val START_EVENT_REQUEST_RECEIVED: ElementId = ElementId("StartEvent_RequestReceived")
-
-    val START_EVENT_SUBMIT_REGISTRATION_FORM: ElementId =
-        ElementId("StartEvent_SubmitRegistrationForm")
-
-    val SUB_PROCESS_CONFIRMATION: ElementId = ElementId("SubProcess_Confirmation")
-
-    val TIMER_AFTER_3_DAYS: ElementId = ElementId("Timer_After3Days")
-
-    val TIMER_EVERY_DAY: ElementId = ElementId("Timer_EveryDay")
-  }
-
-  /**
-   * BPMN message names used to correlate messages to running process instances.
-   */
-  object Messages {
-    val MESSAGE_FORM_SUBMITTED: MessageName = MessageName("Message_FormSubmitted")
-
-    val MESSAGE_SUBSCRIPTION_CONFIRMED: MessageName =
-        MessageName("Message_SubscriptionConfirmed")
-  }
-
-  /**
-   * Job worker task types used in `@JobWorker(type = ServiceTasks.X)` annotations.
-   * Kept as `const val String` because annotation arguments must be compile-time constants.
-   */
-  object ServiceTasks {
-    const val NEWSLETTER_ABORT_REGISTRATION: String = "newsletter.abortRegistration"
-
-    const val NEWSLETTER_REGISTRATION_COMPLETED: String = "newsletter.registrationCompleted"
-
-    const val NEWSLETTER_SEND_CONFIRMATION_MAIL: String = "newsletter.sendConfirmationMail"
-
-    const val NEWSLETTER_SEND_WELCOME_MAIL: String = "newsletter.sendWelcomeMail"
-  }
-
-  object Timers {
-    val TIMER_AFTER_3_DAYS: BpmnTimer = BpmnTimer("Duration", "PT2M30S")
-
-    val TIMER_EVERY_DAY: BpmnTimer = BpmnTimer("Duration", "PT1M")
-  }
-
-  /**
-   * Process variables grouped by the BPMN element that declares them.
-   * Direction is encoded in each variable's wrapper type: `VariableName.Input`, `VariableName.Output`, or `VariableName.InOut` when the variable is both read and written by the same element.
-   * Consumer APIs that take a specific subtype (e.g. `fun setOutput(v: VariableName.Output)`) get compile-time direction enforcement.
-   */
-  object Variables {
-    object ActivitySendWelcomeMail {
-      val SUBSCRIPTION_ID: VariableName.Input = VariableName.Input("subscriptionId")
+      object Next {
+        val endEventRegistrationAborted: SequenceFlows<EndEventRegistrationAborted>
+          get() = SequenceFlows.single(
+            flowId = ElementId("Flow_1bsb8no"),
+            target = EndEventRegistrationAborted,
+          )
+      }
     }
 
-    object EndEventRegistrationCompleted {
-      val SUBSCRIPTION_ID: VariableName.Output = VariableName.Output("subscriptionId")
+    object ActivityConfirmRegistration : AbstractFlowNode(
+      id = ElementId(ActivityConfirmRegistration.ELEMENT_ID),
+      elementType = BpmnElementType.RECEIVE_TASK,
+      name = "Confirm subscription",
+    ), HasSuccessors<ActivityConfirmRegistration.Next>, HasMessage {
+      const val ELEMENT_ID: String = "Activity_ConfirmRegistration"
+
+      override val message: MessageName = Messages.SUBSCRIPTION_CONFIRMED
+
+      override val next: Next = Next
+
+      object Next {
+        val endEventSubscriptionConfirmed: SequenceFlows<EndEventSubscriptionConfirmed>
+          get() = SequenceFlows.single(
+            flowId = ElementId("Flow_1cpwe57"),
+            target = EndEventSubscriptionConfirmed,
+          )
+
+        val timerEveryDay: AttachedBoundaryEvent<TimerEveryDay>
+          get() = AttachedBoundaryEvent(target = TimerEveryDay)
+      }
     }
 
-    object StartEventRequestReceived {
-      val SUBSCRIPTION_ID: VariableName.Output = VariableName.Output("subscriptionId")
+    object ActivitySendConfirmationMail : AbstractFlowNode(
+      id = ElementId(ActivitySendConfirmationMail.ELEMENT_ID),
+      elementType = BpmnElementType.SERVICE_TASK,
+      name = "Send confirmation mail",
+    ), HasSuccessors<ActivitySendConfirmationMail.Next>, HasJobType {
+      const val ELEMENT_ID: String = "Activity_SendConfirmationMail"
+
+      override val jobType: String = ServiceTasks.NEWSLETTER_SEND_CONFIRMATION_MAIL
+
+      override val next: Next = Next
+
+      object Next {
+        val activityConfirmRegistration: SequenceFlows<ActivityConfirmRegistration>
+          get() = SequenceFlows.single(
+            flowId = ElementId("Flow_1bckm43"),
+            target = ActivityConfirmRegistration,
+          )
+      }
     }
 
-    object StartEventSubmitRegistrationForm {
-      val SUBSCRIPTION_ID: VariableName.Output = VariableName.Output("subscriptionId")
+    object ActivitySendWelcomeMail : AbstractFlowNode(
+      id = ElementId(ActivitySendWelcomeMail.ELEMENT_ID),
+      elementType = BpmnElementType.SERVICE_TASK,
+      name = "Send Welcome-Mail",
+    ), HasSuccessors<ActivitySendWelcomeMail.Next>, HasJobType, HasVariables {
+      const val ELEMENT_ID: String = "Activity_SendWelcomeMail"
+
+      override val jobType: String = ServiceTasks.NEWSLETTER_SEND_WELCOME_MAIL
+
+      override val variables: Variables = Variables
+
+      override val next: Next = Next
+
+      object Variables : RegisteredVariableDefinitions() {
+        val SUBSCRIPTION_ID: VariableName.Input = input(ProcessVariables.SUBSCRIPTION_ID)
+      }
+
+      object Next {
+        val endEventRegistrationCompleted: SequenceFlows<EndEventRegistrationCompleted>
+          get() = SequenceFlows.single(
+            flowId = ElementId("Flow_1i7hjid"),
+            target = EndEventRegistrationCompleted,
+          )
+      }
     }
-  }
 
-  /**
-   * Sequence flows between BPMN elements.
-   * Mainly useful for process-model tooling, tests, and AI-agent consumers reasoning about the process shape.
-   * Worker code typically does not need these.
-   */
-  object Flows {
-    val FLOW_05_I_3_X_1_Y: BpmnFlow = BpmnFlow(
-          id = "Flow_05i3x1y",
-          sourceRef = "StartEvent_RequestReceived",
-          targetRef = "Activity_SendConfirmationMail",
-        )
+    object EndEventRegistrationAborted : AbstractFlowNode(
+      id = ElementId(EndEventRegistrationAborted.ELEMENT_ID),
+      elementType = BpmnElementType.END_EVENT,
+      name = "Registration aborted",
+    ), Event {
+      override val eventType: BpmnEventType = BpmnEventType.NONE
 
-    val FLOW_09_CUVZP: BpmnFlow = BpmnFlow(
-          id = "Flow_09cuvzp",
-          sourceRef = "SubProcess_Confirmation",
-          targetRef = "Activity_SendWelcomeMail",
-        )
+      const val ELEMENT_ID: String = "EndEvent_RegistrationAborted"
+    }
 
-    val FLOW_0_X_4_EWVB: BpmnFlow = BpmnFlow(
-          id = "Flow_0x4ewvb",
-          sourceRef = "Timer_EveryDay",
-          targetRef = "Activity_SendConfirmationMail",
-        )
+    object EndEventRegistrationCompleted : AbstractFlowNode(
+      id = ElementId(EndEventRegistrationCompleted.ELEMENT_ID),
+      elementType = BpmnElementType.END_EVENT,
+      name = "Registration completed",
+    ), Event, HasJobType, HasVariables {
+      override val eventType: BpmnEventType = BpmnEventType.MESSAGE
 
-    val FLOW_1_BCKM_43: BpmnFlow = BpmnFlow(
-          id = "Flow_1bckm43",
-          sourceRef = "Activity_SendConfirmationMail",
-          targetRef = "Activity_ConfirmRegistration",
-        )
+      const val ELEMENT_ID: String = "EndEvent_RegistrationCompleted"
 
-    val FLOW_1_BSB_8_NO: BpmnFlow = BpmnFlow(
-          id = "Flow_1bsb8no",
-          sourceRef = "Activity_AbortRegistration",
-          targetRef = "EndEvent_RegistrationAborted",
-        )
+      override val jobType: String = ServiceTasks.NEWSLETTER_REGISTRATION_COMPLETED
 
-    val FLOW_1_CPWE_57: BpmnFlow = BpmnFlow(
-          id = "Flow_1cpwe57",
-          sourceRef = "Activity_ConfirmRegistration",
-          targetRef = "EndEvent_SubscriptionConfirmed",
-        )
+      override val variables: Variables = Variables
 
-    val FLOW_1_CSFYYZ: BpmnFlow = BpmnFlow(
-          id = "Flow_1csfyyz",
-          sourceRef = "StartEvent_SubmitRegistrationForm",
-          targetRef = "SubProcess_Confirmation",
-        )
+      object Variables : RegisteredVariableDefinitions() {
+        val SUBSCRIPTION_ID: VariableName.Output = output(ProcessVariables.SUBSCRIPTION_ID)
+      }
+    }
 
-    val FLOW_1_I_7_HJID: BpmnFlow = BpmnFlow(
-          id = "Flow_1i7hjid",
-          sourceRef = "Activity_SendWelcomeMail",
-          targetRef = "EndEvent_RegistrationCompleted",
-        )
+    object EndEventSubscriptionConfirmed : AbstractFlowNode(
+      id = ElementId(EndEventSubscriptionConfirmed.ELEMENT_ID),
+      elementType = BpmnElementType.END_EVENT,
+      name = "Subscription confirmed",
+    ), Event {
+      override val eventType: BpmnEventType = BpmnEventType.NONE
 
-    val FLOW_1_L_1_LJ_4_M: BpmnFlow = BpmnFlow(
-          id = "Flow_1l1lj4m",
-          sourceRef = "Timer_After3Days",
-          targetRef = "Activity_AbortRegistration",
-        )
-  }
+      const val ELEMENT_ID: String = "EndEvent_SubscriptionConfirmed"
+    }
 
-  /**
-   * Per-element graph metadata (elementType / previousElements / followingElements / parentId / boundary attachments).
-   * Intended for tooling and tests, not worker runtime code.
-   */
-  object Relations {
-    val ACTIVITY_ABORT_REGISTRATION: BpmnRelations = BpmnRelations(
-          name = "Abort registration",
-          previousElements = listOf("Timer_After3Days"),
-          followingElements = listOf("EndEvent_RegistrationAborted"),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-          elementType = "SERVICE_TASK",
-        )
+    object StartEventRequestReceived : AbstractFlowNode(
+      id = ElementId(StartEventRequestReceived.ELEMENT_ID),
+      elementType = BpmnElementType.START_EVENT,
+      name = "Subscription requested",
+    ), HasSuccessors<StartEventRequestReceived.Next>, Event, HasVariables {
+      override val eventType: BpmnEventType = BpmnEventType.NONE
 
-    val ACTIVITY_CONFIRM_REGISTRATION: BpmnRelations = BpmnRelations(
-          name = "Confirm subscription",
-          previousElements = listOf("Activity_SendConfirmationMail"),
-          followingElements = listOf("EndEvent_SubscriptionConfirmed"),
-          parentId = "SubProcess_Confirmation",
-          attachedToRef = null,
-          attachedElements = listOf("Timer_EveryDay"),
-          elementType = "RECEIVE_TASK",
-        )
+      const val ELEMENT_ID: String = "StartEvent_RequestReceived"
 
-    val ACTIVITY_SEND_CONFIRMATION_MAIL: BpmnRelations = BpmnRelations(
-          name = "Send confirmation mail",
-          previousElements = listOf("StartEvent_RequestReceived", "Timer_EveryDay"),
-          followingElements = listOf("Activity_ConfirmRegistration"),
-          parentId = "SubProcess_Confirmation",
-          attachedToRef = null,
-          attachedElements = emptyList(),
-          elementType = "SERVICE_TASK",
-        )
+      override val variables: Variables = Variables
 
-    val ACTIVITY_SEND_WELCOME_MAIL: BpmnRelations = BpmnRelations(
-          name = "Send Welcome-Mail",
-          previousElements = listOf("SubProcess_Confirmation"),
-          followingElements = listOf("EndEvent_RegistrationCompleted"),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-          elementType = "SERVICE_TASK",
-        )
+      override val next: Next = Next
 
-    val END_EVENT_REGISTRATION_ABORTED: BpmnRelations = BpmnRelations(
-          name = "Registration aborted",
-          previousElements = listOf("Activity_AbortRegistration"),
-          followingElements = emptyList(),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-          elementType = "END_EVENT",
-        )
+      object Variables : RegisteredVariableDefinitions() {
+        val SUBSCRIPTION_ID: VariableName.Output = output(ProcessVariables.SUBSCRIPTION_ID)
+      }
 
-    val END_EVENT_REGISTRATION_COMPLETED: BpmnRelations = BpmnRelations(
-          name = "Registration completed",
-          previousElements = listOf("Activity_SendWelcomeMail"),
-          followingElements = emptyList(),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-          elementType = "MESSAGE_END_EVENT",
-        )
+      object Next {
+        val activitySendConfirmationMail: SequenceFlows<ActivitySendConfirmationMail>
+          get() = SequenceFlows.single(
+            flowId = ElementId("Flow_05i3x1y"),
+            target = ActivitySendConfirmationMail,
+          )
+      }
+    }
 
-    val END_EVENT_SUBSCRIPTION_CONFIRMED: BpmnRelations = BpmnRelations(
-          name = "Subscription confirmed",
-          previousElements = listOf("Activity_ConfirmRegistration"),
-          followingElements = emptyList(),
-          parentId = "SubProcess_Confirmation",
-          attachedToRef = null,
-          attachedElements = emptyList(),
-          elementType = "END_EVENT",
-        )
+    object StartEventSubmitRegistrationForm : AbstractFlowNode(
+      id = ElementId(StartEventSubmitRegistrationForm.ELEMENT_ID),
+      elementType = BpmnElementType.START_EVENT,
+      name = "Submit newsletter form",
+    ), HasSuccessors<StartEventSubmitRegistrationForm.Next>, Event, HasMessage, HasVariables {
+      override val eventType: BpmnEventType = BpmnEventType.MESSAGE
 
-    val START_EVENT_REQUEST_RECEIVED: BpmnRelations = BpmnRelations(
-          name = "Subscription requested",
-          previousElements = emptyList(),
-          followingElements = listOf("Activity_SendConfirmationMail"),
-          parentId = "SubProcess_Confirmation",
-          attachedToRef = null,
-          attachedElements = emptyList(),
-          elementType = "START_EVENT",
-        )
+      const val ELEMENT_ID: String = "StartEvent_SubmitRegistrationForm"
 
-    val START_EVENT_SUBMIT_REGISTRATION_FORM: BpmnRelations = BpmnRelations(
-          name = "Submit newsletter form",
-          previousElements = emptyList(),
-          followingElements = listOf("SubProcess_Confirmation"),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-          elementType = "MESSAGE_START_EVENT",
-        )
+      override val message: MessageName = Messages.FORM_SUBMITTED
 
-    val SUB_PROCESS_CONFIRMATION: BpmnRelations = BpmnRelations(
-          name = "Subscription Confirmation",
-          previousElements = listOf("StartEvent_SubmitRegistrationForm"),
-          followingElements = listOf("Activity_SendWelcomeMail"),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = listOf("Timer_After3Days"),
-          elementType = "SUB_PROCESS",
-        )
+      override val variables: Variables = Variables
 
-    val TIMER_AFTER_3_DAYS: BpmnRelations = BpmnRelations(
-          name = "After 3 days",
-          previousElements = emptyList(),
-          followingElements = listOf("Activity_AbortRegistration"),
-          parentId = null,
-          attachedToRef = "SubProcess_Confirmation",
-          attachedElements = emptyList(),
-          elementType = "TIMER_BOUNDARY_EVENT",
-        )
+      override val next: Next = Next
 
-    val TIMER_EVERY_DAY: BpmnRelations = BpmnRelations(
-          name = "Every day",
-          previousElements = emptyList(),
-          followingElements = listOf("Activity_SendConfirmationMail"),
-          parentId = "SubProcess_Confirmation",
-          attachedToRef = "Activity_ConfirmRegistration",
-          attachedElements = emptyList(),
-          elementType = "TIMER_BOUNDARY_EVENT",
-        )
+      object Variables : RegisteredVariableDefinitions() {
+        val SUBSCRIPTION_ID: VariableName.Output = output(ProcessVariables.SUBSCRIPTION_ID)
+      }
+
+      object Next {
+        val subProcessConfirmation: SequenceFlows<SubProcessConfirmation>
+          get() = SequenceFlows.single(
+            flowId = ElementId("Flow_1csfyyz"),
+            target = SubProcessConfirmation,
+          )
+      }
+    }
+
+    object SubProcessConfirmation : AbstractFlowNode(
+      id = ElementId(SubProcessConfirmation.ELEMENT_ID),
+      elementType = BpmnElementType.SUB_PROCESS,
+      name = "Subscription Confirmation",
+    ), HasSuccessors<SubProcessConfirmation.Next>, FlowScope<SubProcessConfirmation.Start> {
+      const val ELEMENT_ID: String = "SubProcess_Confirmation"
+
+      override val next: Next = Next
+
+      override val startEvents: Start = Start
+
+      object Next {
+        val activitySendWelcomeMail: SequenceFlows<ActivitySendWelcomeMail>
+          get() = SequenceFlows.single(
+            flowId = ElementId("Flow_09cuvzp"),
+            target = ActivitySendWelcomeMail,
+          )
+
+        val timerAfter3Days: AttachedBoundaryEvent<TimerAfter3Days>
+          get() = AttachedBoundaryEvent(target = TimerAfter3Days)
+      }
+
+      object Start {
+        val startEventRequestReceived: StartEventRequestReceived
+          get() = StartEventRequestReceived
+      }
+    }
+
+    object TimerAfter3Days : AbstractFlowNode(
+      id = ElementId(TimerAfter3Days.ELEMENT_ID),
+      elementType = BpmnElementType.BOUNDARY_EVENT,
+      name = "After 3 days",
+    ), HasSuccessors<TimerAfter3Days.Next>, BoundaryEvent<SubProcessConfirmation>, TimerEvent {
+      override val eventType: BpmnEventType = BpmnEventType.TIMER
+
+      const val ELEMENT_ID: String = "Timer_After3Days"
+
+      override val timer: BpmnTimer = BpmnTimer(
+        type = TimerType.DURATION,
+        timerValue = "PT2M30S",
+      )
+
+      override val attachedTo: SubProcessConfirmation
+        get() = SubProcessConfirmation
+
+      override val isInterrupting: Boolean = true
+
+      override val next: Next = Next
+
+      object Next {
+        val activityAbortRegistration: SequenceFlows<ActivityAbortRegistration>
+          get() = SequenceFlows.single(
+            flowId = ElementId("Flow_1l1lj4m"),
+            target = ActivityAbortRegistration,
+          )
+      }
+    }
+
+    object TimerEveryDay : AbstractFlowNode(
+      id = ElementId(TimerEveryDay.ELEMENT_ID),
+      elementType = BpmnElementType.BOUNDARY_EVENT,
+      name = "Every day",
+    ), HasSuccessors<TimerEveryDay.Next>, BoundaryEvent<ActivityConfirmRegistration>, TimerEvent {
+      override val eventType: BpmnEventType = BpmnEventType.TIMER
+
+      const val ELEMENT_ID: String = "Timer_EveryDay"
+
+      override val timer: BpmnTimer = BpmnTimer(
+        type = TimerType.DURATION,
+        timerValue = "PT1M",
+      )
+
+      override val attachedTo: ActivityConfirmRegistration
+        get() = ActivityConfirmRegistration
+
+      override val isInterrupting: Boolean = true
+
+      override val next: Next = Next
+
+      object Next {
+        val activitySendConfirmationMail: SequenceFlows<ActivitySendConfirmationMail>
+          get() = SequenceFlows.single(
+            flowId = ElementId("Flow_0x4ewvb"),
+            target = ActivitySendConfirmationMail,
+          )
+      }
+    }
   }
 }

@@ -1,8 +1,8 @@
 package io.miragon.example.adapter.out.db.message
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.miragon.example.adapter.process.generated.NewsletterSubscriptionProcessApi.Messages.MESSAGE_FORM_SUBMITTED
-import io.miragon.example.adapter.process.generated.NewsletterSubscriptionProcessApi.Messages.MESSAGE_SUBSCRIPTION_CONFIRMED
+import io.miragon.example.adapter.process.generated.Messages.FORM_SUBMITTED
+import io.miragon.example.adapter.process.generated.Messages.SUBSCRIPTION_CONFIRMED
 import io.miragon.example.application.port.out.NewsletterSubscriptionProcess
 import io.miragon.example.domain.SubscriptionId
 import org.springframework.stereotype.Component
@@ -20,7 +20,7 @@ class ProcessMessagePersistenceAdapter(
 
     override fun submitForm(id: SubscriptionId) {
         TODO("Implement outbox pattern: Create ProcessMessageEntity and save to repository")
-        // HINT: messageName = MESSAGE_FORM_SUBMITTED
+        // HINT: messageName = FORM_SUBMITTED
         // HINT: correlationId = id.value.toString()
         // HINT: variables = serialize to JSON: mapOf("subscriptionId" to correlationId)
         // HINT: Use objectMapper.writeValueAsString() for JSON serialization
@@ -34,7 +34,7 @@ class ProcessMessagePersistenceAdapter(
 
     override fun confirmSubscription(id: SubscriptionId) {
         TODO("Implement outbox pattern: Create ProcessMessageEntity and save to repository")
-        // HINT: messageName = MESSAGE_SUBSCRIPTION_CONFIRMED
+        // HINT: messageName = SUBSCRIPTION_CONFIRMED
         // HINT: correlationId = id.value.toString()
         // HINT: variables = empty map (no variables needed for confirmation)
         // HINT: Serialize empty map to JSON string

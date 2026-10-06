@@ -1,7 +1,7 @@
 package io.miragon.example.adapter.out.db.message;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.miragon.example.adapter.process.generated.NewsletterSubscriptionProcessApi.Messages;
+import io.miragon.example.adapter.process.generated.Messages;
 import io.miragon.example.application.port.out.NewsletterSubscriptionProcess;
 import io.miragon.example.domain.SubscriptionId;
 import org.springframework.stereotype.Component;
@@ -28,7 +28,7 @@ public class ProcessMessagePersistenceAdapter implements NewsletterSubscriptionP
     @Override
     public void submitForm(SubscriptionId id) {
         throw new UnsupportedOperationException("TODO: Implement outbox pattern: Create ProcessMessageEntity and save to repository");
-        // HINT: messageName = Messages.MESSAGE_FORM_SUBMITTED
+        // HINT: messageName = Messages.FORM_SUBMITTED
         // HINT: correlationId = id.value().toString()
         // HINT: variables = serialize to JSON: Map.of("subscriptionId", correlationId)
         // HINT: Use objectMapper.writeValueAsString() for JSON serialization
@@ -43,7 +43,7 @@ public class ProcessMessagePersistenceAdapter implements NewsletterSubscriptionP
     @Override
     public void confirmSubscription(SubscriptionId id) {
         throw new UnsupportedOperationException("TODO: Implement outbox pattern: Create ProcessMessageEntity and save to repository");
-        // HINT: messageName = Messages.MESSAGE_SUBSCRIPTION_CONFIRMED
+        // HINT: messageName = Messages.SUBSCRIPTION_CONFIRMED
         // HINT: correlationId = id.value().toString()
         // HINT: variables = empty map (no variables needed for confirmation)
         // HINT: Serialize empty map to JSON string

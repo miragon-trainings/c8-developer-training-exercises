@@ -77,3 +77,5 @@ All 6 tests pass and you understand:
 ---
 
 **Stuck?** Compare your code with the newsletter test implementation! 🔍
+
+Still stuck? A reference solution is available in [`solutions/exercise-1-testing-java`](../../solutions/exercise-1-testing-java).
