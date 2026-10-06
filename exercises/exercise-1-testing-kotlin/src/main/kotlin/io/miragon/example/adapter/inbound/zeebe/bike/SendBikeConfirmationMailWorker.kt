@@ -1,6 +1,6 @@
 package io.miragon.example.adapter.inbound.zeebe.bike
 
-import io.miragon.example.adapter.process.generated.BikeSubscriptionSignupProcessApi
+import io.miragon.example.adapter.process.generated.ServiceTasks
 import io.miragon.example.application.port.inbound.bike.SendBikeConfirmationMailUseCase
 import io.miragon.example.domain.bike.BikeSubscriptionId
 import io.camunda.client.annotation.JobWorker
@@ -15,7 +15,7 @@ class SendBikeConfirmationMailWorker(
 ) {
     private val log = KotlinLogging.logger {}
 
-    @JobWorker(type = BikeSubscriptionSignupProcessApi.ServiceTasks.BIKE_SEND_CONFIRMATION_MAIL)
+    @JobWorker(type = ServiceTasks.BIKE_SEND_CONFIRMATION_MAIL)
     fun handle(@Variable subscriptionId: String) {
         log.info { "Sending bike confirmation mail for subscription: $subscriptionId" }
         useCase.sendConfirmationMail(BikeSubscriptionId(UUID.fromString(subscriptionId)))

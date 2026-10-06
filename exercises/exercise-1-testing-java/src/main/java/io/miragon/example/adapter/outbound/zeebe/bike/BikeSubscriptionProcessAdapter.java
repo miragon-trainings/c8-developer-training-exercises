@@ -2,6 +2,7 @@ package io.miragon.example.adapter.outbound.zeebe.bike;
 
 import io.miragon.example.adapter.process.config.ProcessEngineApi;
 import io.miragon.example.adapter.process.generated.BikeSubscriptionSignupProcessApi;
+import io.miragon.example.adapter.process.generated.Messages;
 import io.miragon.example.application.port.outbound.bike.BikeSubscriptionProcess;
 import io.miragon.example.domain.bike.BikeId;
 import io.miragon.example.domain.bike.BikeSubscriptionId;
@@ -33,7 +34,7 @@ public class BikeSubscriptionProcessAdapter implements BikeSubscriptionProcess {
     @Override
     public void sendPaymentReceived(BikeSubscriptionId id) {
         engineApi.sendMessage(
-            BikeSubscriptionSignupProcessApi.Messages.MESSAGE_PAYMENT_RECEIVED,
+            Messages.PAYMENT_RECEIVED,
             id.value().toString()
         );
     }
@@ -41,7 +42,7 @@ public class BikeSubscriptionProcessAdapter implements BikeSubscriptionProcess {
     @Override
     public void sendRequestCanceled(BikeSubscriptionId id) {
         engineApi.sendMessage(
-            BikeSubscriptionSignupProcessApi.Messages.MESSAGE_REQUEST_CANCELED,
+            Messages.REQUEST_CANCELED,
             id.value().toString()
         );
     }
@@ -49,7 +50,7 @@ public class BikeSubscriptionProcessAdapter implements BikeSubscriptionProcess {
     @Override
     public void sendBikeReceived(BikeSubscriptionId id) {
         engineApi.sendMessage(
-            BikeSubscriptionSignupProcessApi.Messages.MESSAGE_BIKE_RECEIVED,
+            Messages.BIKE_RECEIVED,
             id.value().toString()
         );
     }

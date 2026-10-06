@@ -1,6 +1,6 @@
 package io.miragon.example.adapter.inbound.zeebe.bike
 
-import io.miragon.example.adapter.process.generated.BikeSubscriptionSignupProcessApi
+import io.miragon.example.adapter.process.generated.ServiceTasks
 import io.miragon.example.application.port.inbound.bike.SendPaymentReminderUseCase
 import io.miragon.example.domain.bike.BikeSubscriptionId
 import io.camunda.client.annotation.JobWorker
@@ -15,7 +15,7 @@ class SendPaymentReminderWorker(
 ) {
     private val log = KotlinLogging.logger {}
 
-    @JobWorker(type = BikeSubscriptionSignupProcessApi.ServiceTasks.BIKE_SEND_PAYMENT_REMINDER)
+    @JobWorker(type = ServiceTasks.BIKE_SEND_PAYMENT_REMINDER)
     fun handle(@Variable subscriptionId: String) {
         log.info { "Sending payment reminder for subscription: $subscriptionId" }
         useCase.sendPaymentReminder(BikeSubscriptionId(UUID.fromString(subscriptionId)))

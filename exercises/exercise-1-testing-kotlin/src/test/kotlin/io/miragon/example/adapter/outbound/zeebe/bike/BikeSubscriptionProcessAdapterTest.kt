@@ -2,6 +2,7 @@ package io.miragon.example.adapter.outbound.zeebe.bike
 
 import io.miragon.example.adapter.process.config.ProcessEngineApi
 import io.miragon.example.adapter.process.generated.BikeSubscriptionSignupProcessApi
+import io.miragon.example.adapter.process.generated.Messages
 import io.miragon.example.domain.bike.BikeId
 import io.miragon.example.domain.bike.BikeSubscriptionId
 import io.mockk.Runs
@@ -57,7 +58,7 @@ class BikeSubscriptionProcessAdapterTest {
         // Then
         verify {
             engineApi.sendMessage(
-                messageName = BikeSubscriptionSignupProcessApi.Messages.MESSAGE_PAYMENT_RECEIVED,
+                messageName = Messages.PAYMENT_RECEIVED,
                 correlationId = subscriptionId.value.toString(),
                 variables = emptyMap()
             )
@@ -77,7 +78,7 @@ class BikeSubscriptionProcessAdapterTest {
         // Then
         verify {
             engineApi.sendMessage(
-                messageName = BikeSubscriptionSignupProcessApi.Messages.MESSAGE_REQUEST_CANCELED,
+                messageName = Messages.REQUEST_CANCELED,
                 correlationId = subscriptionId.value.toString(),
                 variables = emptyMap()
             )
@@ -97,7 +98,7 @@ class BikeSubscriptionProcessAdapterTest {
         // Then
         verify {
             engineApi.sendMessage(
-                messageName = BikeSubscriptionSignupProcessApi.Messages.MESSAGE_BIKE_RECEIVED,
+                messageName = Messages.BIKE_RECEIVED,
                 correlationId = subscriptionId.value.toString(),
                 variables = emptyMap()
             )

@@ -1,6 +1,6 @@
 package io.miragon.example.adapter.inbound.zeebe.bike;
 
-import io.miragon.example.adapter.process.generated.BikeSubscriptionSignupProcessApi;
+import io.miragon.example.adapter.process.generated.ServiceTasks;
 import io.miragon.example.application.port.inbound.bike.SendBikeWelcomeMailUseCase;
 import io.miragon.example.domain.bike.BikeSubscriptionId;
 import io.camunda.client.annotation.JobWorker;
@@ -22,7 +22,7 @@ public class SendBikeWelcomeMailWorker {
         this.useCase = useCase;
     }
 
-    @JobWorker(type = BikeSubscriptionSignupProcessApi.ServiceTasks.BIKE_SEND_WELCOME_MAIL)
+    @JobWorker(type = ServiceTasks.BIKE_SEND_WELCOME_MAIL)
     public void handle(@Variable String subscriptionId) {
         log.info("Sending welcome mail for subscription: {}", subscriptionId);
         useCase.sendWelcomeMail(new BikeSubscriptionId(UUID.fromString(subscriptionId)));

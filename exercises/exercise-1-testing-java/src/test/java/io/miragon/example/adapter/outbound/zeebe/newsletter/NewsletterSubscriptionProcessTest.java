@@ -18,8 +18,8 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import java.time.Duration;
 import java.util.UUID;
 
-import static io.miragon.example.adapter.process.generated.NewsletterSubscriptionProcessApi.Elements.ACTIVITY_ABORT_REGISTRATION;
-import static io.miragon.example.adapter.process.generated.NewsletterSubscriptionProcessApi.Elements.ACTIVITY_SEND_CONFIRMATION_MAIL;
+import static io.miragon.example.adapter.process.generated.NewsletterSubscriptionProcessApi.FlowNodes.ActivityAbortRegistration;
+import static io.miragon.example.adapter.process.generated.NewsletterSubscriptionProcessApi.FlowNodes.ActivitySendConfirmationMail;
 import static io.camunda.process.test.api.assertions.ProcessInstanceSelectors.byKey;
 import static org.mockito.Mockito.*;
 
@@ -89,15 +89,15 @@ class NewsletterSubscriptionProcessTest {
         processTestContext.increaseTime(Duration.ofSeconds(60));
         CamundaAssert
             .assertThatProcessInstance(byKey(instanceKey))
-            .hasCompletedElement(ACTIVITY_SEND_CONFIRMATION_MAIL.getValue(),1);
+            .hasCompletedElement(ActivitySendConfirmationMail.ELEMENT_ID,1);
 
         processTestContext.increaseTime(Duration.ofSeconds(60));
         CamundaAssert.assertThatProcessInstance(byKey(instanceKey))
-            .hasCompletedElement(ACTIVITY_SEND_CONFIRMATION_MAIL.getValue(),2);
+            .hasCompletedElement(ActivitySendConfirmationMail.ELEMENT_ID,2);
 
         processTestContext.increaseTime(Duration.ofSeconds(30));
         CamundaAssert.assertThatProcessInstance(byKey(instanceKey))
-            .hasCompletedElement(ACTIVITY_ABORT_REGISTRATION.getValue(), 1);
+            .hasCompletedElement(ActivityAbortRegistration.ELEMENT_ID, 1);
 
         // then - process should abort
         CamundaAssert.assertThatProcessInstance(byKey(instanceKey)).isCompleted();

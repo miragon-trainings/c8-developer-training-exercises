@@ -1,6 +1,6 @@
 package io.miragon.example.adapter.inbound.zeebe.bike;
 
-import io.miragon.example.adapter.process.generated.BikeSubscriptionSignupProcessApi;
+import io.miragon.example.adapter.process.generated.ServiceTasks;
 import io.miragon.example.application.port.inbound.bike.CheckBikeAvailabilityUseCase;
 import io.miragon.example.domain.bike.BikeSubscriptionId;
 import io.camunda.client.annotation.JobWorker;
@@ -23,7 +23,7 @@ public class CheckBikeAvailabilityWorker {
         this.useCase = useCase;
     }
 
-    @JobWorker(type = BikeSubscriptionSignupProcessApi.ServiceTasks.BIKE_CHECK_AVAILABILITY)
+    @JobWorker(type = ServiceTasks.BIKE_CHECK_AVAILABILITY)
     public Map<String, Object> handle(@Variable String subscriptionId) {
         log.info("Checking bike availability for subscription: {}", subscriptionId);
         boolean available = useCase.checkAvailability(new BikeSubscriptionId(UUID.fromString(subscriptionId)));

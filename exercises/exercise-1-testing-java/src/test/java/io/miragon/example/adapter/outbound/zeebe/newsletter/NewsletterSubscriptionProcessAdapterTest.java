@@ -2,6 +2,7 @@ package io.miragon.example.adapter.outbound.zeebe.newsletter;
 
 import io.miragon.example.adapter.process.config.ProcessEngineApi;
 import io.miragon.example.adapter.process.generated.NewsletterSubscriptionProcessApi;
+import io.miragon.example.adapter.process.generated.Messages;
 import io.miragon.example.domain.SubscriptionId;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -52,7 +53,7 @@ class NewsletterSubscriptionProcessAdapterTest {
 		
 		// Then
 		verify(engineApi).sendMessage(
-				NewsletterSubscriptionProcessApi.Messages.MESSAGE_SUBSCRIPTION_CONFIRMED,
+				Messages.SUBSCRIPTION_CONFIRMED,
 				subscriptionId.value().toString()
 		);
 	}

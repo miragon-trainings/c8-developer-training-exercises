@@ -1,6 +1,6 @@
 package io.miragon.example.adapter.inbound.zeebe.bike;
 
-import io.miragon.example.adapter.process.generated.BikeSubscriptionSignupProcessApi;
+import io.miragon.example.adapter.process.generated.ServiceTasks;
 import io.miragon.example.application.port.inbound.bike.SendRejectionMailUseCase;
 import io.miragon.example.domain.bike.BikeSubscriptionId;
 import io.camunda.client.annotation.JobWorker;
@@ -22,7 +22,7 @@ public class SendRejectionMailWorker {
         this.useCase = useCase;
     }
 
-    @JobWorker(type = BikeSubscriptionSignupProcessApi.ServiceTasks.BIKE_SEND_REJECTION_MAIL)
+    @JobWorker(type = ServiceTasks.BIKE_SEND_REJECTION_MAIL)
     public void handle(@Variable String subscriptionId) {
         log.info("Sending rejection mail for subscription: {}", subscriptionId);
         useCase.sendRejectionMail(new BikeSubscriptionId(UUID.fromString(subscriptionId)));

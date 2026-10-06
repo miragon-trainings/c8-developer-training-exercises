@@ -10,8 +10,8 @@ import io.camunda.process.test.api.assertions.ProcessInstanceSelectors
 import io.miragon.example.adapter.outbound.zeebe.newsletter.NewsletterSubscriptionProcessAdapter
 import io.miragon.example.adapter.process.generated.NewsletterSubscriptionProcessApi
 import io.miragon.bpmn.runtime.ElementId
-import io.miragon.example.adapter.process.generated.NewsletterSubscriptionProcessApi.Elements
-import io.miragon.example.adapter.process.generated.NewsletterSubscriptionProcessApi.Variables.StartEventSubmitRegistrationForm.SUBSCRIPTION_ID
+import io.miragon.example.adapter.process.generated.NewsletterSubscriptionProcessApi.FlowNodes
+import io.miragon.example.adapter.process.generated.NewsletterSubscriptionProcessApi.FlowNodes.StartEventSubmitRegistrationForm.Variables.SUBSCRIPTION_ID
 import io.miragon.example.application.port.inbound.newsletter.AbortSubscriptionUseCase
 import io.miragon.example.application.port.inbound.newsletter.SendConfirmationMailUseCase
 import io.miragon.example.application.port.inbound.newsletter.SendWelcomeMailUseCase
@@ -91,15 +91,15 @@ class NewsletterSubscriptionProcessTest {
         // given - process is started
         val subscriptionId = UUID.fromString("4a607799-804b-43d1-8aa2-bdcc4dfd9b87")
         val instance = startProcessAt(
-            elementId = Elements.ACTIVITY_SEND_CONFIRMATION_MAIL,
+            elementId = FlowNodes.ActivitySendConfirmationMail.id,
             subscriptionId = SubscriptionId(subscriptionId)
         )
 
         // when - time passes, and reminder is sent; then the user confirms
-        CamundaAssert.assertThat(instance).hasCompletedElement(Elements.ACTIVITY_SEND_CONFIRMATION_MAIL.value, 1)
+        CamundaAssert.assertThat(instance).hasCompletedElement(FlowNodes.ActivitySendConfirmationMail.ELEMENT_ID, 1)
         processTestContext.increaseTime(Duration.ofSeconds(60))
         CamundaAssert.assertThatProcessInstance(instance)
-            .hasCompletedElement(Elements.ACTIVITY_SEND_CONFIRMATION_MAIL.value, 2)
+            .hasCompletedElement(FlowNodes.ActivitySendConfirmationMail.ELEMENT_ID, 2)
 
         processPort.confirmSubscription(SubscriptionId(subscriptionId))
 
@@ -117,7 +117,7 @@ class NewsletterSubscriptionProcessTest {
         // given - process is started
         val subscriptionId = UUID.fromString("4a607799-804b-43d1-8aa2-bdcc4dfd9b88")
         val instance = startProcessAt(
-            elementId = Elements.ACTIVITY_CONFIRM_REGISTRATION,
+            elementId = FlowNodes.ActivityConfirmRegistration.id,
             subscriptionId = SubscriptionId(subscriptionId)
         )
 
@@ -126,7 +126,7 @@ class NewsletterSubscriptionProcessTest {
 
         // then - subscription is aborted
         CamundaAssert.assertThatProcessInstance(instance)
-            .hasCompletedElement(Elements.ACTIVITY_ABORT_REGISTRATION.value, 1)
+            .hasCompletedElement(FlowNodes.ActivityAbortRegistration.ELEMENT_ID, 1)
         CamundaAssert.assertThatProcessInstance(instance).isCompleted
 
         verify { abortSubscriptionUseCase.abort(SubscriptionId(subscriptionId)) }

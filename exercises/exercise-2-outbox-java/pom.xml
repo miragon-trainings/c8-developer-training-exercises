@@ -25,7 +25,7 @@
         <zeebe.version>8.9.21</zeebe.version>
         <postgresql.version>42.7.13</postgresql.version>
         <mockito.version>5.24.0</mockito.version>
-        <bpmn-to-code.version>5.2.0</bpmn-to-code.version>
+        <bpmn-to-code.version>6.1.1</bpmn-to-code.version>
     </properties>
 
     <dependencyManagement>

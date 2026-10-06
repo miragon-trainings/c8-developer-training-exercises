@@ -2,7 +2,7 @@ package io.miragon.example.adapter.inbound.zeebe.newsletter;
 
 import io.camunda.client.annotation.JobWorker;
 import io.camunda.client.annotation.Variable;
-import io.miragon.example.adapter.process.generated.NewsletterSubscriptionProcessApi.ServiceTasks;
+import io.miragon.example.adapter.process.generated.ServiceTasks;
 import io.miragon.example.application.port.inbound.newsletter.AbortSubscriptionUseCase;
 import io.miragon.example.domain.SubscriptionId;
 import org.slf4j.Logger;

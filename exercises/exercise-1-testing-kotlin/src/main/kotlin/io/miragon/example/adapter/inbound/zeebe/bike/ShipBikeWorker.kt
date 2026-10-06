@@ -1,6 +1,6 @@
 package io.miragon.example.adapter.inbound.zeebe.bike
 
-import io.miragon.example.adapter.process.generated.BikeSubscriptionSignupProcessApi
+import io.miragon.example.adapter.process.generated.ServiceTasks
 import io.miragon.example.application.port.inbound.bike.ShipBikeUseCase
 import io.miragon.example.domain.bike.BikeSubscriptionId
 import io.camunda.client.annotation.JobWorker
@@ -15,7 +15,7 @@ class ShipBikeWorker(
 ) {
     private val log = KotlinLogging.logger {}
 
-    @JobWorker(type = BikeSubscriptionSignupProcessApi.ServiceTasks.BIKE_SHIP_BIKE)
+    @JobWorker(type = ServiceTasks.BIKE_SHIP_BIKE)
     fun handle(@Variable subscriptionId: String) {
         log.info { "Shipping bike for subscription: $subscriptionId" }
         useCase.shipBike(BikeSubscriptionId(UUID.fromString(subscriptionId)))

@@ -3,16 +3,31 @@
 
 package io.miragon.example.adapter.process.generated
 
+import io.miragon.bpmn.runtime.AbstractFlowNode
+import io.miragon.bpmn.runtime.AttachedBoundaryEvent
+import io.miragon.bpmn.runtime.BoundaryEvent
+import io.miragon.bpmn.runtime.BpmnElementType
 import io.miragon.bpmn.runtime.BpmnEngine
-import io.miragon.bpmn.runtime.BpmnFlow
-import io.miragon.bpmn.runtime.BpmnRelations
+import io.miragon.bpmn.runtime.BpmnEventType
 import io.miragon.bpmn.runtime.BpmnTimer
 import io.miragon.bpmn.runtime.ElementId
+import io.miragon.bpmn.runtime.Event
+import io.miragon.bpmn.runtime.FlowNode
+import io.miragon.bpmn.runtime.HasJobType
+import io.miragon.bpmn.runtime.HasMessage
+import io.miragon.bpmn.runtime.HasSuccessors
+import io.miragon.bpmn.runtime.HasVariables
 import io.miragon.bpmn.runtime.MessageName
 import io.miragon.bpmn.runtime.ProcessId
+import io.miragon.bpmn.runtime.RegisteredVariableDefinitions
+import io.miragon.bpmn.runtime.SequenceFlows
+import io.miragon.bpmn.runtime.TimerEvent
+import io.miragon.bpmn.runtime.TimerType
 import io.miragon.bpmn.runtime.VariableName
+import kotlin.Boolean
 import kotlin.String
 import kotlin.Suppress
+import kotlin.collections.List
 
 object BikeSubscriptionSignupProcessApi {
   val PROCESS_ID: ProcessId = ProcessId("bike-subscription-signup")
@@ -20,391 +35,407 @@ object BikeSubscriptionSignupProcessApi {
   val PROCESS_ENGINE: BpmnEngine = BpmnEngine.ZEEBE
 
   /**
-   * BPMN element ids as declared in the source model.
-   * Typically used in process-level tests or when searching for tasks.
-   * Worker runtime code rarely needs these.
+   * Typed navigation over the process flow: one nested object per BPMN element.
    */
-  object Elements {
-    val ACTIVITY_CHECK_AVAILABILITY: ElementId = ElementId("Activity_CheckAvailability")
+  object FlowNodes {
+    val all: List<FlowNode> = listOf(
+      ActivityCheckAvailability,
+      ActivityNotifyAboutCancelation,
+      ActivitySendConfirmationMail,
+      ActivitySendPaymentReminder,
+      ActivitySendRejectionMail,
+      ActivitySendWelcomeMail,
+      ActivityShipBike,
+      ActivityWaitForDelivery,
+      ActivityWaitForPayment,
+      EndEventCustomerReminded,
+      EndEventOfferNotPossible,
+      EndEventRequestCanceled,
+      EndEventSubscriptionActive,
+      GatewayBikeAvailable,
+      MessageRequestCanceledEvent,
+      StartEventSubscriptionRequested,
+      TimerEvery3Days,
+    )
 
-    val ACTIVITY_NOTIFY_ABOUT_CANCELATION: ElementId =
-        ElementId("Activity_NotifyAboutCancelation")
+    object ActivityCheckAvailability : AbstractFlowNode(
+      id = ElementId(ActivityCheckAvailability.ELEMENT_ID),
+      elementType = BpmnElementType.SERVICE_TASK,
+      name = "Check bike availability",
+    ), HasSuccessors<ActivityCheckAvailability.Next>, HasJobType, HasVariables {
+      const val ELEMENT_ID: String = "Activity_CheckAvailability"
 
-    val ACTIVITY_SEND_CONFIRMATION_MAIL: ElementId =
-        ElementId("Activity_SendConfirmationMail")
+      override val jobType: String = ServiceTasks.BIKE_CHECK_AVAILABILITY
 
-    val ACTIVITY_SEND_PAYMENT_REMINDER: ElementId = ElementId("Activity_SendPaymentReminder")
+      override val variables: Variables = Variables
 
-    val ACTIVITY_SEND_REJECTION_MAIL: ElementId = ElementId("Activity_SendRejectionMail")
+      override val next: Next = Next
 
-    val ACTIVITY_SEND_WELCOME_MAIL: ElementId = ElementId("Activity_SendWelcomeMail")
+      object Variables : RegisteredVariableDefinitions() {
+        val SUBSCRIPTION_ID: VariableName.Input = input(ProcessVariables.SUBSCRIPTION_ID)
+      }
 
-    val ACTIVITY_SHIP_BIKE: ElementId = ElementId("Activity_ShipBike")
-
-    val ACTIVITY_WAIT_FOR_DELIVERY: ElementId = ElementId("Activity_WaitForDelivery")
-
-    val ACTIVITY_WAIT_FOR_PAYMENT: ElementId = ElementId("Activity_WaitForPayment")
-
-    val END_EVENT_CUSTOMER_REMINDED: ElementId = ElementId("EndEvent_CustomerReminded")
-
-    val END_EVENT_OFFER_NOT_POSSIBLE: ElementId = ElementId("EndEvent_OfferNotPossible")
-
-    val END_EVENT_REQUEST_CANCELED: ElementId = ElementId("EndEvent_RequestCanceled")
-
-    val END_EVENT_SUBSCRIPTION_ACTIVE: ElementId = ElementId("EndEvent_SubscriptionActive")
-
-    val GATEWAY_BIKE_AVAILABLE: ElementId = ElementId("Gateway_BikeAvailable")
-
-    val MESSAGE_REQUEST_CANCELED_EVENT: ElementId = ElementId("Message_RequestCanceledEvent")
-
-    val START_EVENT_SUBSCRIPTION_REQUESTED: ElementId =
-        ElementId("StartEvent_SubscriptionRequested")
-
-    val TIMER_EVERY_3_DAYS: ElementId = ElementId("Timer_Every3Days")
-  }
-
-  /**
-   * BPMN message names used to correlate messages to running process instances.
-   */
-  object Messages {
-    val MESSAGE_BIKE_RECEIVED: MessageName = MessageName("Message_BikeReceived")
-
-    val MESSAGE_PAYMENT_RECEIVED: MessageName = MessageName("Message_PaymentReceived")
-
-    val MESSAGE_REQUEST_CANCELED: MessageName = MessageName("Message_RequestCanceled")
-  }
-
-  /**
-   * Job worker task types used in `@JobWorker(type = ServiceTasks.X)` annotations.
-   * Kept as `const val String` because annotation arguments must be compile-time constants.
-   */
-  object ServiceTasks {
-    const val BIKE_CHECK_AVAILABILITY: String = "bike.checkAvailability"
-
-    const val BIKE_NOTIFY_CANCELATION: String = "bike.notifyCancelation"
-
-    const val BIKE_SEND_CONFIRMATION_MAIL: String = "bike.sendConfirmationMail"
-
-    const val BIKE_SEND_PAYMENT_REMINDER: String = "bike.sendPaymentReminder"
-
-    const val BIKE_SEND_REJECTION_MAIL: String = "bike.sendRejectionMail"
-
-    const val BIKE_SEND_WELCOME_MAIL: String = "bike.sendWelcomeMail"
-
-    const val BIKE_SHIP_BIKE: String = "bike.shipBike"
-  }
-
-  object Timers {
-    val TIMER_EVERY_3_DAYS: BpmnTimer = BpmnTimer("Duration", "PT72H")
-  }
-
-  /**
-   * Process variables grouped by the BPMN element that declares them.
-   * Direction is encoded in each variable's wrapper type: `VariableName.Input`, `VariableName.Output`, or `VariableName.InOut` when the variable is both read and written by the same element.
-   * Consumer APIs that take a specific subtype (e.g. `fun setOutput(v: VariableName.Output)`) get compile-time direction enforcement.
-   */
-  object Variables {
-    object ActivityCheckAvailability {
-      val SUBSCRIPTION_ID: VariableName.Input = VariableName.Input("subscriptionId")
+      object Next {
+        val gatewayBikeAvailable: SequenceFlows<GatewayBikeAvailable>
+          get() = SequenceFlows.single(
+            flowId = ElementId("Flow_ToGatewayAvailable"),
+            target = GatewayBikeAvailable,
+          )
+      }
     }
 
-    object ActivityNotifyAboutCancelation {
-      val SUBSCRIPTION_ID: VariableName.Input = VariableName.Input("subscriptionId")
+    object ActivityNotifyAboutCancelation : AbstractFlowNode(
+      id = ElementId(ActivityNotifyAboutCancelation.ELEMENT_ID),
+      elementType = BpmnElementType.SERVICE_TASK,
+      name = "Notify about cancelation",
+    ), HasSuccessors<ActivityNotifyAboutCancelation.Next>, HasJobType, HasVariables {
+      const val ELEMENT_ID: String = "Activity_NotifyAboutCancelation"
+
+      override val jobType: String = ServiceTasks.BIKE_NOTIFY_CANCELATION
+
+      override val variables: Variables = Variables
+
+      override val next: Next = Next
+
+      object Variables : RegisteredVariableDefinitions() {
+        val SUBSCRIPTION_ID: VariableName.Input = input(ProcessVariables.SUBSCRIPTION_ID)
+      }
+
+      object Next {
+        val endEventRequestCanceled: SequenceFlows<EndEventRequestCanceled>
+          get() = SequenceFlows.single(
+            flowId = ElementId("Flow_ToCanceledEnd"),
+            target = EndEventRequestCanceled,
+          )
+      }
     }
 
-    object ActivitySendConfirmationMail {
-      val SUBSCRIPTION_ID: VariableName.Input = VariableName.Input("subscriptionId")
+    object ActivitySendConfirmationMail : AbstractFlowNode(
+      id = ElementId(ActivitySendConfirmationMail.ELEMENT_ID),
+      elementType = BpmnElementType.SERVICE_TASK,
+      name = "Send confirmation mail",
+    ), HasSuccessors<ActivitySendConfirmationMail.Next>, HasJobType, HasVariables {
+      const val ELEMENT_ID: String = "Activity_SendConfirmationMail"
+
+      override val jobType: String = ServiceTasks.BIKE_SEND_CONFIRMATION_MAIL
+
+      override val variables: Variables = Variables
+
+      override val next: Next = Next
+
+      object Variables : RegisteredVariableDefinitions() {
+        val SUBSCRIPTION_ID: VariableName.Input = input(ProcessVariables.SUBSCRIPTION_ID)
+      }
+
+      object Next {
+        val activityWaitForPayment: SequenceFlows<ActivityWaitForPayment>
+          get() = SequenceFlows.single(
+            flowId = ElementId("Flow_ToWaitForPayment"),
+            target = ActivityWaitForPayment,
+          )
+      }
     }
 
-    object ActivitySendPaymentReminder {
-      val SUBSCRIPTION_ID: VariableName.Input = VariableName.Input("subscriptionId")
+    object ActivitySendPaymentReminder : AbstractFlowNode(
+      id = ElementId(ActivitySendPaymentReminder.ELEMENT_ID),
+      elementType = BpmnElementType.SERVICE_TASK,
+      name = "Remind about payment",
+    ), HasSuccessors<ActivitySendPaymentReminder.Next>, HasJobType, HasVariables {
+      const val ELEMENT_ID: String = "Activity_SendPaymentReminder"
+
+      override val jobType: String = ServiceTasks.BIKE_SEND_PAYMENT_REMINDER
+
+      override val variables: Variables = Variables
+
+      override val next: Next = Next
+
+      object Variables : RegisteredVariableDefinitions() {
+        val SUBSCRIPTION_ID: VariableName.Input = input(ProcessVariables.SUBSCRIPTION_ID)
+      }
+
+      object Next {
+        val endEventCustomerReminded: SequenceFlows<EndEventCustomerReminded>
+          get() = SequenceFlows.single(
+            flowId = ElementId("Flow_ReminderSent"),
+            target = EndEventCustomerReminded,
+          )
+      }
     }
 
-    object ActivitySendRejectionMail {
-      val SUBSCRIPTION_ID: VariableName.Input = VariableName.Input("subscriptionId")
+    object ActivitySendRejectionMail : AbstractFlowNode(
+      id = ElementId(ActivitySendRejectionMail.ELEMENT_ID),
+      elementType = BpmnElementType.SERVICE_TASK,
+      name = "Send rejection mail",
+    ), HasSuccessors<ActivitySendRejectionMail.Next>, HasJobType, HasVariables {
+      const val ELEMENT_ID: String = "Activity_SendRejectionMail"
+
+      override val jobType: String = ServiceTasks.BIKE_SEND_REJECTION_MAIL
+
+      override val variables: Variables = Variables
+
+      override val next: Next = Next
+
+      object Variables : RegisteredVariableDefinitions() {
+        val SUBSCRIPTION_ID: VariableName.Input = input(ProcessVariables.SUBSCRIPTION_ID)
+      }
+
+      object Next {
+        val endEventOfferNotPossible: SequenceFlows<EndEventOfferNotPossible>
+          get() = SequenceFlows.single(
+            flowId = ElementId("Flow_ToEndNotAvailable"),
+            target = EndEventOfferNotPossible,
+          )
+      }
     }
 
-    object ActivitySendWelcomeMail {
-      val SUBSCRIPTION_ID: VariableName.Input = VariableName.Input("subscriptionId")
+    object ActivitySendWelcomeMail : AbstractFlowNode(
+      id = ElementId(ActivitySendWelcomeMail.ELEMENT_ID),
+      elementType = BpmnElementType.SERVICE_TASK,
+      name = "Send welcome Mail",
+    ), HasSuccessors<ActivitySendWelcomeMail.Next>, HasJobType, HasVariables {
+      const val ELEMENT_ID: String = "Activity_SendWelcomeMail"
+
+      override val jobType: String = ServiceTasks.BIKE_SEND_WELCOME_MAIL
+
+      override val variables: Variables = Variables
+
+      override val next: Next = Next
+
+      object Variables : RegisteredVariableDefinitions() {
+        val SUBSCRIPTION_ID: VariableName.Input = input(ProcessVariables.SUBSCRIPTION_ID)
+      }
+
+      object Next {
+        val endEventSubscriptionActive: SequenceFlows<EndEventSubscriptionActive>
+          get() = SequenceFlows.single(
+            flowId = ElementId("Flow_ToEndSuccess"),
+            target = EndEventSubscriptionActive,
+          )
+      }
     }
 
-    object ActivityShipBike {
-      val SUBSCRIPTION_ID: VariableName.Input = VariableName.Input("subscriptionId")
+    object ActivityShipBike : AbstractFlowNode(
+      id = ElementId(ActivityShipBike.ELEMENT_ID),
+      elementType = BpmnElementType.SERVICE_TASK,
+      name = "Ship bike",
+    ), HasSuccessors<ActivityShipBike.Next>, HasJobType, HasVariables {
+      const val ELEMENT_ID: String = "Activity_ShipBike"
+
+      override val jobType: String = ServiceTasks.BIKE_SHIP_BIKE
+
+      override val variables: Variables = Variables
+
+      override val next: Next = Next
+
+      object Variables : RegisteredVariableDefinitions() {
+        val SUBSCRIPTION_ID: VariableName.Input = input(ProcessVariables.SUBSCRIPTION_ID)
+      }
+
+      object Next {
+        val activityWaitForDelivery: SequenceFlows<ActivityWaitForDelivery>
+          get() = SequenceFlows.single(
+            flowId = ElementId("Flow_ToWaitForDelivery"),
+            target = ActivityWaitForDelivery,
+          )
+      }
     }
 
-    object StartEventSubscriptionRequested {
-      val SUBSCRIPTION_ID: VariableName.Output = VariableName.Output("subscriptionId")
+    object ActivityWaitForDelivery : AbstractFlowNode(
+      id = ElementId(ActivityWaitForDelivery.ELEMENT_ID),
+      elementType = BpmnElementType.RECEIVE_TASK,
+      name = "Bike received",
+    ), HasSuccessors<ActivityWaitForDelivery.Next>, HasMessage {
+      const val ELEMENT_ID: String = "Activity_WaitForDelivery"
+
+      override val message: MessageName = Messages.BIKE_RECEIVED
+
+      override val next: Next = Next
+
+      object Next {
+        val activitySendWelcomeMail: SequenceFlows<ActivitySendWelcomeMail>
+          get() = SequenceFlows.single(
+            flowId = ElementId("Flow_BikeReceived"),
+            target = ActivitySendWelcomeMail,
+          )
+      }
     }
-  }
 
-  /**
-   * Sequence flows between BPMN elements.
-   * Mainly useful for process-model tooling, tests, and AI-agent consumers reasoning about the process shape.
-   * Worker code typically does not need these.
-   */
-  object Flows {
-    val FLOW_BIKE_AVAILABLE: BpmnFlow = BpmnFlow(
-          id = "Flow_BikeAvailable",
-          name = "Yes",
-          sourceRef = "Gateway_BikeAvailable",
-          targetRef = "Activity_SendConfirmationMail",
-          condition = "=bikeAvailable = true",
-        )
+    object ActivityWaitForPayment : AbstractFlowNode(
+      id = ElementId(ActivityWaitForPayment.ELEMENT_ID),
+      elementType = BpmnElementType.RECEIVE_TASK,
+      name = "Wait for first payment",
+    ), HasSuccessors<ActivityWaitForPayment.Next>, HasMessage {
+      const val ELEMENT_ID: String = "Activity_WaitForPayment"
 
-    val FLOW_BIKE_NOT_AVAILABLE: BpmnFlow = BpmnFlow(
-          id = "Flow_BikeNotAvailable",
-          name = "No",
-          sourceRef = "Gateway_BikeAvailable",
-          targetRef = "Activity_SendRejectionMail",
-          condition = "=bikeAvailable = false",
-        )
+      override val message: MessageName = Messages.PAYMENT_RECEIVED
 
-    val FLOW_BIKE_RECEIVED: BpmnFlow = BpmnFlow(
-          id = "Flow_BikeReceived",
-          sourceRef = "Activity_WaitForDelivery",
-          targetRef = "Activity_SendWelcomeMail",
-        )
+      override val next: Next = Next
 
-    val FLOW_PAYMENT_RECEIVED: BpmnFlow = BpmnFlow(
-          id = "Flow_PaymentReceived",
-          sourceRef = "Activity_WaitForPayment",
-          targetRef = "Activity_ShipBike",
-        )
+      object Next {
+        val activityShipBike: SequenceFlows<ActivityShipBike>
+          get() = SequenceFlows.single(
+            flowId = ElementId("Flow_PaymentReceived"),
+            target = ActivityShipBike,
+          )
 
-    val FLOW_REMINDER_SENT: BpmnFlow = BpmnFlow(
-          id = "Flow_ReminderSent",
-          sourceRef = "Activity_SendPaymentReminder",
-          targetRef = "EndEvent_CustomerReminded",
-        )
+        val messageRequestCanceledEvent: AttachedBoundaryEvent<MessageRequestCanceledEvent>
+          get() = AttachedBoundaryEvent(target = MessageRequestCanceledEvent)
 
-    val FLOW_TO_CANCEL_NOTIFICATION: BpmnFlow = BpmnFlow(
-          id = "Flow_ToCancelNotification",
-          sourceRef = "Message_RequestCanceledEvent",
-          targetRef = "Activity_NotifyAboutCancelation",
-        )
+        val timerEvery3Days: AttachedBoundaryEvent<TimerEvery3Days>
+          get() = AttachedBoundaryEvent(target = TimerEvery3Days)
+      }
+    }
 
-    val FLOW_TO_CANCELED_END: BpmnFlow = BpmnFlow(
-          id = "Flow_ToCanceledEnd",
-          sourceRef = "Activity_NotifyAboutCancelation",
-          targetRef = "EndEvent_RequestCanceled",
-        )
+    object EndEventCustomerReminded : AbstractFlowNode(
+      id = ElementId(EndEventCustomerReminded.ELEMENT_ID),
+      elementType = BpmnElementType.END_EVENT,
+      name = "Customer reminded",
+    ), Event {
+      override val eventType: BpmnEventType = BpmnEventType.NONE
 
-    val FLOW_TO_CHECK_AVAILABILITY: BpmnFlow = BpmnFlow(
-          id = "Flow_ToCheckAvailability",
-          sourceRef = "StartEvent_SubscriptionRequested",
-          targetRef = "Activity_CheckAvailability",
-        )
+      const val ELEMENT_ID: String = "EndEvent_CustomerReminded"
+    }
 
-    val FLOW_TO_END_NOT_AVAILABLE: BpmnFlow = BpmnFlow(
-          id = "Flow_ToEndNotAvailable",
-          sourceRef = "Activity_SendRejectionMail",
-          targetRef = "EndEvent_OfferNotPossible",
-        )
+    object EndEventOfferNotPossible : AbstractFlowNode(
+      id = ElementId(EndEventOfferNotPossible.ELEMENT_ID),
+      elementType = BpmnElementType.END_EVENT,
+      name = "Offer not possible",
+    ), Event {
+      override val eventType: BpmnEventType = BpmnEventType.NONE
 
-    val FLOW_TO_END_SUCCESS: BpmnFlow = BpmnFlow(
-          id = "Flow_ToEndSuccess",
-          sourceRef = "Activity_SendWelcomeMail",
-          targetRef = "EndEvent_SubscriptionActive",
-        )
+      const val ELEMENT_ID: String = "EndEvent_OfferNotPossible"
+    }
 
-    val FLOW_TO_GATEWAY_AVAILABLE: BpmnFlow = BpmnFlow(
-          id = "Flow_ToGatewayAvailable",
-          sourceRef = "Activity_CheckAvailability",
-          targetRef = "Gateway_BikeAvailable",
-        )
+    object EndEventRequestCanceled : AbstractFlowNode(
+      id = ElementId(EndEventRequestCanceled.ELEMENT_ID),
+      elementType = BpmnElementType.END_EVENT,
+      name = "Subscription request canceled",
+    ), Event {
+      override val eventType: BpmnEventType = BpmnEventType.NONE
 
-    val FLOW_TO_SEND_REMINDER: BpmnFlow = BpmnFlow(
-          id = "Flow_ToSendReminder",
-          sourceRef = "Timer_Every3Days",
-          targetRef = "Activity_SendPaymentReminder",
-        )
+      const val ELEMENT_ID: String = "EndEvent_RequestCanceled"
+    }
 
-    val FLOW_TO_WAIT_FOR_DELIVERY: BpmnFlow = BpmnFlow(
-          id = "Flow_ToWaitForDelivery",
-          sourceRef = "Activity_ShipBike",
-          targetRef = "Activity_WaitForDelivery",
-        )
+    object EndEventSubscriptionActive : AbstractFlowNode(
+      id = ElementId(EndEventSubscriptionActive.ELEMENT_ID),
+      elementType = BpmnElementType.END_EVENT,
+      name = "Subscription active",
+    ), Event {
+      override val eventType: BpmnEventType = BpmnEventType.NONE
 
-    val FLOW_TO_WAIT_FOR_PAYMENT: BpmnFlow = BpmnFlow(
-          id = "Flow_ToWaitForPayment",
-          sourceRef = "Activity_SendConfirmationMail",
-          targetRef = "Activity_WaitForPayment",
-        )
-  }
+      const val ELEMENT_ID: String = "EndEvent_SubscriptionActive"
+    }
 
-  /**
-   * Per-element graph metadata (elementType / previousElements / followingElements / parentId / boundary attachments).
-   * Intended for tooling and tests, not worker runtime code.
-   */
-  object Relations {
-    val ACTIVITY_CHECK_AVAILABILITY: BpmnRelations = BpmnRelations(
-          name = "Check bike availability",
-          previousElements = listOf("StartEvent_SubscriptionRequested"),
-          followingElements = listOf("Gateway_BikeAvailable"),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-          elementType = "SERVICE_TASK",
-        )
+    object GatewayBikeAvailable : AbstractFlowNode(
+      id = ElementId(GatewayBikeAvailable.ELEMENT_ID),
+      elementType = BpmnElementType.EXCLUSIVE_GATEWAY,
+      name = "Available?",
+    ), HasSuccessors<GatewayBikeAvailable.Next> {
+      const val ELEMENT_ID: String = "Gateway_BikeAvailable"
 
-    val ACTIVITY_NOTIFY_ABOUT_CANCELATION: BpmnRelations = BpmnRelations(
-          name = "Notify about cancelation",
-          previousElements = listOf("Message_RequestCanceledEvent"),
-          followingElements = listOf("EndEvent_RequestCanceled"),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-          elementType = "SERVICE_TASK",
-        )
+      override val next: Next = Next
 
-    val ACTIVITY_SEND_CONFIRMATION_MAIL: BpmnRelations = BpmnRelations(
-          name = "Send confirmation mail",
-          previousElements = listOf("Gateway_BikeAvailable"),
-          followingElements = listOf("Activity_WaitForPayment"),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-          elementType = "SERVICE_TASK",
-        )
+      object Next {
+        val activitySendConfirmationMail: SequenceFlows<ActivitySendConfirmationMail>
+          get() = SequenceFlows.single(
+            flowId = ElementId("Flow_BikeAvailable"),
+            name = "Yes",
+            conditionExpression = "=bikeAvailable = true",
+            target = ActivitySendConfirmationMail,
+          )
 
-    val ACTIVITY_SEND_PAYMENT_REMINDER: BpmnRelations = BpmnRelations(
-          name = "Remind about payment",
-          previousElements = listOf("Timer_Every3Days"),
-          followingElements = listOf("EndEvent_CustomerReminded"),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-          elementType = "SERVICE_TASK",
-        )
+        val activitySendRejectionMail: SequenceFlows<ActivitySendRejectionMail>
+          get() = SequenceFlows.single(
+            flowId = ElementId("Flow_BikeNotAvailable"),
+            name = "No",
+            conditionExpression = "=bikeAvailable = false",
+            target = ActivitySendRejectionMail,
+          )
+      }
+    }
 
-    val ACTIVITY_SEND_REJECTION_MAIL: BpmnRelations = BpmnRelations(
-          name = "Send rejection mail",
-          previousElements = listOf("Gateway_BikeAvailable"),
-          followingElements = listOf("EndEvent_OfferNotPossible"),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-          elementType = "SERVICE_TASK",
-        )
+    object MessageRequestCanceledEvent : AbstractFlowNode(
+      id = ElementId(MessageRequestCanceledEvent.ELEMENT_ID),
+      elementType = BpmnElementType.BOUNDARY_EVENT,
+      name = "Request canceled",
+    ), HasSuccessors<MessageRequestCanceledEvent.Next>, BoundaryEvent<ActivityWaitForPayment>,
+        HasMessage {
+      override val eventType: BpmnEventType = BpmnEventType.MESSAGE
 
-    val ACTIVITY_SEND_WELCOME_MAIL: BpmnRelations = BpmnRelations(
-          name = "Send welcome Mail",
-          previousElements = listOf("Activity_WaitForDelivery"),
-          followingElements = listOf("EndEvent_SubscriptionActive"),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-          elementType = "SERVICE_TASK",
-        )
+      const val ELEMENT_ID: String = "Message_RequestCanceledEvent"
 
-    val ACTIVITY_SHIP_BIKE: BpmnRelations = BpmnRelations(
-          name = "Ship bike",
-          previousElements = listOf("Activity_WaitForPayment"),
-          followingElements = listOf("Activity_WaitForDelivery"),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-          elementType = "SERVICE_TASK",
-        )
+      override val message: MessageName = Messages.REQUEST_CANCELED
 
-    val ACTIVITY_WAIT_FOR_DELIVERY: BpmnRelations = BpmnRelations(
-          name = "Bike received",
-          previousElements = listOf("Activity_ShipBike"),
-          followingElements = listOf("Activity_SendWelcomeMail"),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-          elementType = "RECEIVE_TASK",
-        )
+      override val attachedTo: ActivityWaitForPayment
+        get() = ActivityWaitForPayment
 
-    val ACTIVITY_WAIT_FOR_PAYMENT: BpmnRelations = BpmnRelations(
-          name = "Wait for first payment",
-          previousElements = listOf("Activity_SendConfirmationMail"),
-          followingElements = listOf("Activity_ShipBike"),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = listOf("Timer_Every3Days", "Message_RequestCanceledEvent"),
-          elementType = "RECEIVE_TASK",
-        )
+      override val isInterrupting: Boolean = true
 
-    val END_EVENT_CUSTOMER_REMINDED: BpmnRelations = BpmnRelations(
-          name = "Customer reminded",
-          previousElements = listOf("Activity_SendPaymentReminder"),
-          followingElements = emptyList(),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-          elementType = "END_EVENT",
-        )
+      override val next: Next = Next
 
-    val END_EVENT_OFFER_NOT_POSSIBLE: BpmnRelations = BpmnRelations(
-          name = "Offer not possible",
-          previousElements = listOf("Activity_SendRejectionMail"),
-          followingElements = emptyList(),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-          elementType = "END_EVENT",
-        )
+      object Next {
+        val activityNotifyAboutCancelation: SequenceFlows<ActivityNotifyAboutCancelation>
+          get() = SequenceFlows.single(
+            flowId = ElementId("Flow_ToCancelNotification"),
+            target = ActivityNotifyAboutCancelation,
+          )
+      }
+    }
 
-    val END_EVENT_REQUEST_CANCELED: BpmnRelations = BpmnRelations(
-          name = "Subscription request canceled",
-          previousElements = listOf("Activity_NotifyAboutCancelation"),
-          followingElements = emptyList(),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-          elementType = "END_EVENT",
-        )
+    object StartEventSubscriptionRequested : AbstractFlowNode(
+      id = ElementId(StartEventSubscriptionRequested.ELEMENT_ID),
+      elementType = BpmnElementType.START_EVENT,
+      name = "Subscription requested",
+    ), HasSuccessors<StartEventSubscriptionRequested.Next>, Event, HasVariables {
+      override val eventType: BpmnEventType = BpmnEventType.NONE
 
-    val END_EVENT_SUBSCRIPTION_ACTIVE: BpmnRelations = BpmnRelations(
-          name = "Subscription active",
-          previousElements = listOf("Activity_SendWelcomeMail"),
-          followingElements = emptyList(),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-          elementType = "END_EVENT",
-        )
+      const val ELEMENT_ID: String = "StartEvent_SubscriptionRequested"
 
-    val GATEWAY_BIKE_AVAILABLE: BpmnRelations = BpmnRelations(
-          name = "Available?",
-          previousElements = listOf("Activity_CheckAvailability"),
-          followingElements = listOf("Activity_SendConfirmationMail", "Activity_SendRejectionMail"),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-          elementType = "EXCLUSIVE_GATEWAY",
-        )
+      override val variables: Variables = Variables
 
-    val MESSAGE_REQUEST_CANCELED_EVENT: BpmnRelations = BpmnRelations(
-          name = "Request canceled",
-          previousElements = emptyList(),
-          followingElements = listOf("Activity_NotifyAboutCancelation"),
-          parentId = null,
-          attachedToRef = "Activity_WaitForPayment",
-          attachedElements = emptyList(),
-          elementType = "MESSAGE_BOUNDARY_EVENT",
-        )
+      override val next: Next = Next
 
-    val START_EVENT_SUBSCRIPTION_REQUESTED: BpmnRelations = BpmnRelations(
-          name = "Subscription requested",
-          previousElements = emptyList(),
-          followingElements = listOf("Activity_CheckAvailability"),
-          parentId = null,
-          attachedToRef = null,
-          attachedElements = emptyList(),
-          elementType = "START_EVENT",
-        )
+      object Variables : RegisteredVariableDefinitions() {
+        val SUBSCRIPTION_ID: VariableName.Output = output(ProcessVariables.SUBSCRIPTION_ID)
+      }
 
-    val TIMER_EVERY_3_DAYS: BpmnRelations = BpmnRelations(
-          name = "Every 3 days",
-          previousElements = emptyList(),
-          followingElements = listOf("Activity_SendPaymentReminder"),
-          parentId = null,
-          attachedToRef = "Activity_WaitForPayment",
-          attachedElements = emptyList(),
-          elementType = "TIMER_BOUNDARY_EVENT",
-        )
+      object Next {
+        val activityCheckAvailability: SequenceFlows<ActivityCheckAvailability>
+          get() = SequenceFlows.single(
+            flowId = ElementId("Flow_ToCheckAvailability"),
+            target = ActivityCheckAvailability,
+          )
+      }
+    }
+
+    object TimerEvery3Days : AbstractFlowNode(
+      id = ElementId(TimerEvery3Days.ELEMENT_ID),
+      elementType = BpmnElementType.BOUNDARY_EVENT,
+      name = "Every 3 days",
+    ), HasSuccessors<TimerEvery3Days.Next>, BoundaryEvent<ActivityWaitForPayment>, TimerEvent {
+      override val eventType: BpmnEventType = BpmnEventType.TIMER
+
+      const val ELEMENT_ID: String = "Timer_Every3Days"
+
+      override val timer: BpmnTimer = BpmnTimer(
+        type = TimerType.DURATION,
+        timerValue = "PT72H",
+      )
+
+      override val attachedTo: ActivityWaitForPayment
+        get() = ActivityWaitForPayment
+
+      override val isInterrupting: Boolean = false
+
+      override val next: Next = Next
+
+      object Next {
+        val activitySendPaymentReminder: SequenceFlows<ActivitySendPaymentReminder>
+          get() = SequenceFlows.single(
+            flowId = ElementId("Flow_ToSendReminder"),
+            target = ActivitySendPaymentReminder,
+          )
+      }
+    }
   }
 }

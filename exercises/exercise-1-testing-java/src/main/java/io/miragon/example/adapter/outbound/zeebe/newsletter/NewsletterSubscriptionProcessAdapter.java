@@ -2,6 +2,7 @@ package io.miragon.example.adapter.outbound.zeebe.newsletter;
 
 import io.miragon.example.adapter.process.config.ProcessEngineApi;
 import io.miragon.example.adapter.process.generated.NewsletterSubscriptionProcessApi;
+import io.miragon.example.adapter.process.generated.Messages;
 import io.miragon.example.application.port.outbound.newsletter.NewsletterSubscriptionProcess;
 import io.miragon.example.domain.SubscriptionId;
 import org.springframework.stereotype.Component;
@@ -29,7 +30,7 @@ public class NewsletterSubscriptionProcessAdapter implements NewsletterSubscript
     @Override
     public void confirmSubscription(SubscriptionId id) {
         engineApi.sendMessage(
-            NewsletterSubscriptionProcessApi.Messages.MESSAGE_SUBSCRIPTION_CONFIRMED,
+            Messages.SUBSCRIPTION_CONFIRMED,
             id.value().toString()
         );
     }

@@ -1,6 +1,6 @@
 package io.miragon.example.adapter.inbound.zeebe.bike
 
-import io.miragon.example.adapter.process.generated.BikeSubscriptionSignupProcessApi
+import io.miragon.example.adapter.process.generated.ServiceTasks
 import io.miragon.example.application.port.inbound.bike.SendBikeWelcomeMailUseCase
 import io.miragon.example.domain.bike.BikeSubscriptionId
 import io.camunda.client.annotation.JobWorker
@@ -15,7 +15,7 @@ class SendBikeWelcomeMailWorker(
 ) {
     private val log = KotlinLogging.logger {}
 
-    @JobWorker(type = BikeSubscriptionSignupProcessApi.ServiceTasks.BIKE_SEND_WELCOME_MAIL)
+    @JobWorker(type = ServiceTasks.BIKE_SEND_WELCOME_MAIL)
     fun handle(@Variable subscriptionId: String) {
         log.info { "Sending welcome mail for subscription: $subscriptionId" }
         useCase.sendWelcomeMail(BikeSubscriptionId(UUID.fromString(subscriptionId)))

@@ -2,6 +2,7 @@ package io.miragon.example.adapter.outbound.zeebe.newsletter
 
 import io.miragon.example.adapter.process.config.ProcessEngineApi
 import io.miragon.example.adapter.process.generated.NewsletterSubscriptionProcessApi
+import io.miragon.example.adapter.process.generated.Messages
 import io.miragon.example.domain.SubscriptionId
 import io.mockk.Runs
 import io.mockk.every
@@ -52,7 +53,7 @@ class NewsletterSubscriptionProcessAdapterTest {
         // Then
         verify {
             engineApi.sendMessage(
-                messageName = NewsletterSubscriptionProcessApi.Messages.MESSAGE_SUBSCRIPTION_CONFIRMED,
+                messageName = Messages.SUBSCRIPTION_CONFIRMED,
                 correlationId = subscriptionId.value.toString(),
                 variables = emptyMap()
             )

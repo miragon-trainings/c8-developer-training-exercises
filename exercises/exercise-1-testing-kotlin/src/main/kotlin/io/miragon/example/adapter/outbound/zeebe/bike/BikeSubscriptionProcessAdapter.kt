@@ -1,6 +1,7 @@
 package io.miragon.example.adapter.outbound.zeebe.bike
 
 import io.miragon.example.adapter.process.generated.BikeSubscriptionSignupProcessApi
+import io.miragon.example.adapter.process.generated.Messages
 import io.miragon.example.application.port.outbound.bike.BikeSubscriptionProcess
 import io.miragon.example.adapter.process.config.ProcessEngineApi
 import io.miragon.example.domain.bike.BikeId
@@ -25,21 +26,21 @@ class BikeSubscriptionProcessAdapter(
 
     override fun sendPaymentReceived(id: BikeSubscriptionId) {
         engineApi.sendMessage(
-            messageName = BikeSubscriptionSignupProcessApi.Messages.MESSAGE_PAYMENT_RECEIVED,
+            messageName = Messages.PAYMENT_RECEIVED,
             correlationId = id.value.toString()
         )
     }
 
     override fun sendRequestCanceled(id: BikeSubscriptionId) {
         engineApi.sendMessage(
-            messageName = BikeSubscriptionSignupProcessApi.Messages.MESSAGE_REQUEST_CANCELED,
+            messageName = Messages.REQUEST_CANCELED,
             correlationId = id.value.toString()
         )
     }
 
     override fun sendBikeReceived(id: BikeSubscriptionId) {
         engineApi.sendMessage(
-            messageName = BikeSubscriptionSignupProcessApi.Messages.MESSAGE_BIKE_RECEIVED,
+            messageName = Messages.BIKE_RECEIVED,
             correlationId = id.value.toString()
         )
     }

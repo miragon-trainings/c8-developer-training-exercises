@@ -1,6 +1,6 @@
 package io.miragon.example.adapter.in.zeebe;
 
-import io.miragon.example.adapter.process.generated.NewsletterSubscriptionProcessApi.ServiceTasks;
+import io.miragon.example.adapter.process.generated.ServiceTasks;
 import io.miragon.example.application.port.in.SendWelcomeMailUseCase;
 import io.miragon.example.domain.OperationId;
 import io.miragon.example.domain.SubscriptionId;

@@ -1,6 +1,6 @@
 package io.miragon.example.adapter.inbound.zeebe.bike
 
-import io.miragon.example.adapter.process.generated.BikeSubscriptionSignupProcessApi
+import io.miragon.example.adapter.process.generated.ServiceTasks
 import io.miragon.example.application.port.inbound.bike.CheckBikeAvailabilityUseCase
 import io.miragon.example.domain.bike.BikeSubscriptionId
 import io.camunda.client.annotation.JobWorker
@@ -15,7 +15,7 @@ class CheckBikeAvailabilityWorker(
 ) {
     private val log = KotlinLogging.logger {}
 
-    @JobWorker(type = BikeSubscriptionSignupProcessApi.ServiceTasks.BIKE_CHECK_AVAILABILITY)
+    @JobWorker(type = ServiceTasks.BIKE_CHECK_AVAILABILITY)
     fun handle(@Variable subscriptionId: String): Map<String, Any> {
         log.info { "Checking bike availability for subscription: $subscriptionId" }
         val available = useCase.checkAvailability(BikeSubscriptionId(UUID.fromString(subscriptionId)))

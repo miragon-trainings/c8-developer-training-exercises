@@ -3,7 +3,7 @@ package io.miragon.example.adapter.inbound.zeebe.newsletter
 import io.camunda.client.annotation.JobWorker
 import io.camunda.client.annotation.Variable
 import io.camunda.client.api.response.ActivatedJob
-import io.miragon.example.adapter.process.generated.NewsletterSubscriptionProcessApi.ServiceTasks
+import io.miragon.example.adapter.process.generated.ServiceTasks
 import io.miragon.example.application.port.inbound.newsletter.SendConfirmationMailUseCase
 import io.miragon.example.domain.SubscriptionId
 import mu.KotlinLogging

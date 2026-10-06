@@ -1,6 +1,6 @@
 package io.miragon.example.adapter.inbound.zeebe.newsletter
 
-import io.miragon.example.adapter.process.generated.NewsletterSubscriptionProcessApi.ServiceTasks
+import io.miragon.example.adapter.process.generated.ServiceTasks
 import io.miragon.example.application.port.inbound.newsletter.SendWelcomeMailUseCase
 import io.miragon.example.domain.SubscriptionId
 import io.camunda.client.annotation.JobWorker
