@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" 
+                   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" 
+                   xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" 
+                   xmlns:di="http://www.omg.org/spec/DD/20100524/DI" 
+                   xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" 
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+                   xmlns:modeler="http://camunda.org/schema/modeler/1.0" 
+                   id="Definitions_BikeSubscription" 
+                   targetNamespace="http://bpmn.io/schema/bpmn" 
+                   exporter="Camunda Modeler" 
+                   exporterVersion="5.43.1" 
+                   modeler:executionPlatform="Camunda Cloud" 
+                   modeler:executionPlatformVersion="8.8.0">
+  
+  <!-- Message Definitions -->
+  <bpmn:message id="Message_PaymentReceived" name="Message_PaymentReceived">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="=subscriptionId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+  
+  <bpmn:message id="Message_RequestCanceled" name="Message_RequestCanceled">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="=subscriptionId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+  
+  <bpmn:message id="Message_BikeReceived" name="Message_BikeReceived">
+    <bpmn:extensionElements>
+      <zeebe:subscription correlationKey="=subscriptionId" />
+    </bpmn:extensionElements>
+  </bpmn:message>
+  
+  <bpmn:process id="bike-subscription-signup" name="Bike Subscription Signup" isExecutable="true">
+    
+    <!-- Start Event -->
+    <bpmn:startEvent id="StartEvent_SubscriptionRequested" name="Subscription requested">
+      <bpmn:extensionElements>
+        <zeebe:ioMapping>
+          <zeebe:output source="=subscriptionId" target="subscriptionId" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:outgoing>Flow_ToCheckAvailability</bpmn:outgoing>
+    </bpmn:startEvent>
+    
+    <bpmn:sequenceFlow id="Flow_ToCheckAvailability" sourceRef="StartEvent_SubscriptionRequested" targetRef="Activity_CheckAvailability" />
+    
+    <!-- Check Availability -->
+    <bpmn:serviceTask id="Activity_CheckAvailability" name="Check bike availability">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="bike.checkAvailability" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=subscriptionId" target="subscriptionId" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToCheckAvailability</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToGatewayAvailable</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <bpmn:sequenceFlow id="Flow_ToGatewayAvailable" sourceRef="Activity_CheckAvailability" targetRef="Gateway_BikeAvailable" />
+    
+    <!-- Gateway: Available? -->
+    <bpmn:exclusiveGateway id="Gateway_BikeAvailable" name="Available?">
+      <bpmn:incoming>Flow_ToGatewayAvailable</bpmn:incoming>
+      <bpmn:outgoing>Flow_BikeAvailable</bpmn:outgoing>
+      <bpmn:outgoing>Flow_BikeNotAvailable</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    
+    <!-- NOT AVAILABLE PATH -->
+    <bpmn:sequenceFlow id="Flow_BikeNotAvailable" name="No" sourceRef="Gateway_BikeAvailable" targetRef="Activity_SendRejectionMail">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=bikeAvailable = false</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    
+    <bpmn:serviceTask id="Activity_SendRejectionMail" name="Send rejection mail">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="bike.sendRejectionMail" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=subscriptionId" target="subscriptionId" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_BikeNotAvailable</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToEndNotAvailable</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <bpmn:sequenceFlow id="Flow_ToEndNotAvailable" sourceRef="Activity_SendRejectionMail" targetRef="EndEvent_OfferNotPossible" />
+    
+    <bpmn:endEvent id="EndEvent_OfferNotPossible" name="Offer not possible">
+      <bpmn:incoming>Flow_ToEndNotAvailable</bpmn:incoming>
+    </bpmn:endEvent>
+    
+    <!-- AVAILABLE PATH -->
+    <bpmn:sequenceFlow id="Flow_BikeAvailable" name="Yes" sourceRef="Gateway_BikeAvailable" targetRef="Activity_SendConfirmationMail">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=bikeAvailable = true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    
+    <bpmn:serviceTask id="Activity_SendConfirmationMail" name="Send confirmation mail">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="bike.sendConfirmationMail" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=subscriptionId" target="subscriptionId" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_BikeAvailable</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToWaitForPayment</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <bpmn:sequenceFlow id="Flow_ToWaitForPayment" sourceRef="Activity_SendConfirmationMail" targetRef="Activity_WaitForPayment" />
+    
+    <!-- Wait for Payment with Boundary Events -->
+    <bpmn:receiveTask id="Activity_WaitForPayment" name="Wait for first payment" messageRef="Message_PaymentReceived">
+      <bpmn:incoming>Flow_ToWaitForPayment</bpmn:incoming>
+      <bpmn:outgoing>Flow_PaymentReceived</bpmn:outgoing>
+    </bpmn:receiveTask>
+    
+    <!-- Non-interrupting Timer: Every 3 days -->
+    <bpmn:boundaryEvent id="Timer_Every3Days" name="Every&#10;3 days" cancelActivity="false" attachedToRef="Activity_WaitForPayment">
+      <bpmn:outgoing>Flow_ToSendReminder</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerEventDefinition_Every3Days">
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">PT72H</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+    
+    <bpmn:sequenceFlow id="Flow_ToSendReminder" sourceRef="Timer_Every3Days" targetRef="Activity_SendPaymentReminder" />
+    
+    <bpmn:serviceTask id="Activity_SendPaymentReminder" name="Remind about payment">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="bike.sendPaymentReminder" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=subscriptionId" target="subscriptionId" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToSendReminder</bpmn:incoming>
+      <bpmn:outgoing>Flow_ReminderSent</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <bpmn:sequenceFlow id="Flow_ReminderSent" sourceRef="Activity_SendPaymentReminder" targetRef="EndEvent_CustomerReminded" />
+    
+    <bpmn:endEvent id="EndEvent_CustomerReminded" name="Customer reminded">
+      <bpmn:incoming>Flow_ReminderSent</bpmn:incoming>
+    </bpmn:endEvent>
+    
+    <!-- Interrupting Message: Request canceled -->
+    <bpmn:boundaryEvent id="Message_RequestCanceledEvent" name="Request&#10;canceled" cancelActivity="true" attachedToRef="Activity_WaitForPayment">
+      <bpmn:outgoing>Flow_ToCancelNotification</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_RequestCanceled" messageRef="Message_RequestCanceled" />
+    </bpmn:boundaryEvent>
+    
+    <bpmn:sequenceFlow id="Flow_ToCancelNotification" sourceRef="Message_RequestCanceledEvent" targetRef="Activity_NotifyAboutCancelation" />
+    
+    <bpmn:serviceTask id="Activity_NotifyAboutCancelation" name="Notify about cancelation">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="bike.notifyCancelation" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=subscriptionId" target="subscriptionId" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToCancelNotification</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToCanceledEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <bpmn:sequenceFlow id="Flow_ToCanceledEnd" sourceRef="Activity_NotifyAboutCancelation" targetRef="EndEvent_RequestCanceled" />
+    
+    <bpmn:endEvent id="EndEvent_RequestCanceled" name="Subscription request canceled">
+      <bpmn:incoming>Flow_ToCanceledEnd</bpmn:incoming>
+    </bpmn:endEvent>
+    
+    <!-- After Payment: Ship Bike -->
+    <bpmn:sequenceFlow id="Flow_PaymentReceived" sourceRef="Activity_WaitForPayment" targetRef="Activity_ShipBike" />
+    
+    <bpmn:serviceTask id="Activity_ShipBike" name="Ship bike">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="bike.shipBike" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=subscriptionId" target="subscriptionId" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_PaymentReceived</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToWaitForDelivery</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <bpmn:sequenceFlow id="Flow_ToWaitForDelivery" sourceRef="Activity_ShipBike" targetRef="Activity_WaitForDelivery" />
+    
+    <!-- Wait for Delivery Confirmation -->
+    <bpmn:receiveTask id="Activity_WaitForDelivery" name="Bike received" messageRef="Message_BikeReceived">
+      <bpmn:incoming>Flow_ToWaitForDelivery</bpmn:incoming>
+      <bpmn:outgoing>Flow_BikeReceived</bpmn:outgoing>
+    </bpmn:receiveTask>
+    
+    <bpmn:sequenceFlow id="Flow_BikeReceived" sourceRef="Activity_WaitForDelivery" targetRef="Activity_SendWelcomeMail" />
+    
+    <!-- Send Welcome Mail -->
+    <bpmn:serviceTask id="Activity_SendWelcomeMail" name="Send welcome Mail">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="bike.sendWelcomeMail" />
+        <zeebe:ioMapping>
+          <zeebe:input source="=subscriptionId" target="subscriptionId" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_BikeReceived</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToEndSuccess</bpmn:outgoing>
+    </bpmn:serviceTask>
+    
+    <bpmn:sequenceFlow id="Flow_ToEndSuccess" sourceRef="Activity_SendWelcomeMail" targetRef="EndEvent_SubscriptionActive" />
+    
+    <bpmn:endEvent id="EndEvent_SubscriptionActive" name="Subscription active">
+      <bpmn:incoming>Flow_ToEndSuccess</bpmn:incoming>
+    </bpmn:endEvent>
+    
+  </bpmn:process>
+  
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="bike-subscription-signup">
+      <bpmndi:BPMNShape id="StartEvent_1_di" bpmnElement="StartEvent_SubscriptionRequested">
+        <dc:Bounds x="172" y="262" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="160" y="305" width="61" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_CheckAvailability_di" bpmnElement="Activity_CheckAvailability">
+        <dc:Bounds x="290" y="240" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_BikeAvailable_di" bpmnElement="Gateway_BikeAvailable" isMarkerVisible="true">
+        <dc:Bounds x="455" y="255" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="455" y="312" width="51" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_SendRejectionMail_di" bpmnElement="Activity_SendRejectionMail">
+        <dc:Bounds x="530" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_SendConfirmationMail_di" bpmnElement="Activity_SendConfirmationMail">
+        <dc:Bounds x="650" y="240" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_WaitForPayment_di" bpmnElement="Activity_WaitForPayment">
+        <dc:Bounds x="790" y="240" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_NotifyAboutCancelation_di" bpmnElement="Activity_NotifyAboutCancelation">
+        <dc:Bounds x="950" y="380" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_SendPaymentReminder_di" bpmnElement="Activity_SendPaymentReminder">
+        <dc:Bounds x="950" y="80" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_ShipBike_di" bpmnElement="Activity_ShipBike">
+        <dc:Bounds x="950" y="240" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_WaitForDelivery_di" bpmnElement="Activity_WaitForDelivery">
+        <dc:Bounds x="1090" y="240" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_RequestCanceled_di" bpmnElement="EndEvent_RequestCanceled">
+        <dc:Bounds x="1122" y="402" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1098" y="445" width="84" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_CustomerReminded_di" bpmnElement="EndEvent_CustomerReminded">
+        <dc:Bounds x="1122" y="102" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1117" y="145" width="48" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_SendWelcomeMail_di" bpmnElement="Activity_SendWelcomeMail">
+        <dc:Bounds x="1240" y="240" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_SubscriptionActive_di" bpmnElement="EndEvent_SubscriptionActive">
+        <dc:Bounds x="1392" y="262" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1380" y="305" width="61" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_OfferNotPossible_di" bpmnElement="EndEvent_OfferNotPossible">
+        <dc:Bounds x="682" y="102" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="657" y="145" width="87" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Timer_Every3Days_di" bpmnElement="Timer_Every3Days">
+        <dc:Bounds x="832" y="222" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="793" y="196" width="33" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Message_RequestCanceledEvent_di" bpmnElement="Message_RequestCanceledEvent">
+        <dc:Bounds x="832" y="302" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="787" y="333" width="45" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_ToCheckAvailability_di" bpmnElement="Flow_ToCheckAvailability">
+        <di:waypoint x="208" y="280" />
+        <di:waypoint x="290" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToGatewayAvailable_di" bpmnElement="Flow_ToGatewayAvailable">
+        <di:waypoint x="390" y="280" />
+        <di:waypoint x="455" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_BikeAvailable_di" bpmnElement="Flow_BikeAvailable">
+        <di:waypoint x="505" y="280" />
+        <di:waypoint x="650" y="280" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="569" y="262" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_BikeNotAvailable_di" bpmnElement="Flow_BikeNotAvailable">
+        <di:waypoint x="480" y="255" />
+        <di:waypoint x="480" y="120" />
+        <di:waypoint x="530" y="120" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="488" y="185" width="15" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToWaitForPayment_di" bpmnElement="Flow_ToWaitForPayment">
+        <di:waypoint x="750" y="280" />
+        <di:waypoint x="790" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_PaymentReceived_di" bpmnElement="Flow_PaymentReceived">
+        <di:waypoint x="890" y="280" />
+        <di:waypoint x="950" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToCancelNotification_di" bpmnElement="Flow_ToCancelNotification">
+        <di:waypoint x="850" y="338" />
+        <di:waypoint x="850" y="420" />
+        <di:waypoint x="950" y="420" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToCanceledEnd_di" bpmnElement="Flow_ToCanceledEnd">
+        <di:waypoint x="1050" y="420" />
+        <di:waypoint x="1122" y="420" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToSendReminder_di" bpmnElement="Flow_ToSendReminder">
+        <di:waypoint x="850" y="222" />
+        <di:waypoint x="850" y="120" />
+        <di:waypoint x="950" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ReminderSent_di" bpmnElement="Flow_ReminderSent">
+        <di:waypoint x="1050" y="120" />
+        <di:waypoint x="1122" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToWaitForDelivery_di" bpmnElement="Flow_ToWaitForDelivery">
+        <di:waypoint x="1050" y="280" />
+        <di:waypoint x="1090" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_BikeReceived_di" bpmnElement="Flow_BikeReceived">
+        <di:waypoint x="1190" y="280" />
+        <di:waypoint x="1240" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToEndSuccess_di" bpmnElement="Flow_ToEndSuccess">
+        <di:waypoint x="1340" y="280" />
+        <di:waypoint x="1392" y="280" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToEndNotAvailable_di" bpmnElement="Flow_ToEndNotAvailable">
+        <di:waypoint x="630" y="120" />
+        <di:waypoint x="682" y="120" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

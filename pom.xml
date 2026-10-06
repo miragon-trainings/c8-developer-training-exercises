@@ -19,6 +19,7 @@
         <module>exercises/exercise-2-outbox-kotlin</module>
         <module>exercises/exercise-3-connector-java</module>
         <module>exercises/exercise-4-agentic-orchestration</module>
+        <module>solutions</module>
     </modules>
 
 </project>

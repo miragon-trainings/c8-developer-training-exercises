@@ -20,6 +20,19 @@ Hands-on exercises for our Zeebe training program.
    - AI-powered decision making with process orchestration
    - Path: `exercises/exercise-4-agentic-orchestration`
 
+## ✅ Solutions
+
+Reference solutions live next to the exercises in `solutions/` and are built and tested with every change.
+
+| Exercise | Solution |
+|---|---|
+| 1 – BPMN Testing | `solutions/exercise-1-testing-{kotlin\|java}` |
+| 2 – 4 | no reference solution yet |
+
+```bash
+./mvnw -pl solutions/exercise-1-testing-java test
+```
+
 ## 🚀 Quick Start
 
 1. Start infrastructure: `cd stack && docker-compose up -d`
