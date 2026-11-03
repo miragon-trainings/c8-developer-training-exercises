@@ -21,15 +21,15 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <spring-boot.version>4.1.1</spring-boot.version>
-        <kotlin.version>2.4.20</kotlin.version>
-        <zeebe.version>8.9.21</zeebe.version>
-        <postgresql.version>42.7.13</postgresql.version>
+        <spring-boot.version>4.1.2</spring-boot.version>
+        <kotlin.version>2.4.21</kotlin.version>
+        <zeebe.version>8.10.7</zeebe.version>
+        <postgresql.version>42.7.14</postgresql.version>
         <kotlin-logging.version>3.0.5</kotlin-logging.version>
         <mockk.version>1.14.11</mockk.version>
         <spring-mockk.version>5.0.1</spring-mockk.version>
         <kotlin-mockito.version>6.4.0</kotlin-mockito.version>
-        <bpmn-to-code.version>6.1.1</bpmn-to-code.version>
+        <bpmn-to-code.version>7.0.1</bpmn-to-code.version>
     </properties>
 
     <dependencyManagement>
@@ -216,7 +216,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.6.0</version>
+                <version>3.6.1</version>
                 <configuration>
                     <argLine>-XX:+EnableDynamicAgentLoading</argLine>
                 </configuration>

@@ -22,11 +22,11 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <spring-boot.version>4.1.1</spring-boot.version>
-        <kotlin.version>2.4.20</kotlin.version>
+        <kotlin.version>2.4.21</kotlin.version>
         <zeebe.version>8.9.21</zeebe.version>
-        <postgresql.version>42.7.13</postgresql.version>
+        <postgresql.version>42.7.14</postgresql.version>
         <kotlin-logging.version>3.0.5</kotlin-logging.version>
-        <kotlin-jackson.version>2.22.3</kotlin-jackson.version>
+        <kotlin-jackson.version>2.22.4</kotlin-jackson.version>
         <mockk.version>1.14.11</mockk.version>
         <spring-mockk.version>5.0.1</spring-mockk.version>
         <kotlin-mockito.version>6.4.0</kotlin-mockito.version>
@@ -221,7 +221,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.6.0</version>
+                <version>3.6.1</version>
                 <configuration>
                     <argLine>-XX:+EnableDynamicAgentLoading</argLine>
                 </configuration>
